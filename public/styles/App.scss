@@ -1,0 +1,240 @@
+$primary-color: #de6b62;
+
+#root{
+  overflow: hidden; 
+}
+
+.App {
+  text-align: center; 
+  background-image: url(./iconos/light-grey-terrazzo.png);  
+  /* background-image: url(./iconos/memphis-colorful.png); */
+  /* background-image: url(./iconos/light-grey-terrazzo.png);   */
+}
+
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+
+.App-header {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.combosIzquierda{
+  float: left;  
+  margin-top: 15px;
+}
+
+.comboEscalas{
+  float: left;
+  margin-left: 8%;
+  margin-top: 15px;
+}
+
+.armoniaActiva{
+  float: left;
+  margin-top: 15px;
+  margin-left: 4%;
+}
+
+.tiposArpegio{
+  float: left;
+  margin-left: 100px;
+  margin-top: 15px;
+}
+
+.textoFiltros{
+  font-family: 'Bitter', serif;
+  font-size: 20px;
+}
+
+.filtros{
+  display: block;
+  margin: auto;    
+  /* margin-bottom: 0px!important; */
+  padding-left: 15px;
+  padding-right: 15px;
+  margin-top: 15px;
+  margin-bottom: 10px;
+  width: 95%;    
+  background: rgba(255, 153, 153, 0.4);    
+  border-radius: 15px;
+  height: 175px; 
+  color: #413636;
+  font-weight: bold;
+}
+
+.ArmonicaContenedor{
+  height: 590px; 
+}
+
+.imagenArmonica{
+  background-image: url(./iconos/harmonicaBack.png);
+  background-position: -4rem 7rem;
+  background-size: 90rem; 
+  background-attachment: initial;
+  background-repeat: no-repeat;  
+}
+
+/* FULL HD */
+#table {  
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: auto auto auto 1fr auto auto auto auto;
+  width: 100%;
+  margin: auto; 
+  padding-left: 10%;
+  padding-right: 10%;
+}
+
+/* CELULARES */
+@media only screen and (max-width: 768px) {
+  .filtros{
+    width: 90% !important;
+    height: 300px;  
+  }
+  .ArmonicaContenedor{
+    height: 725px!important;
+  }
+  .imagenArmonica{
+    background:none;
+  }
+}
+
+/* NOTEBOOK / LAPTOP */
+@media screen and (min-width: 1200px) and (max-width: 1450px){  
+  .ArmonicaContenedor{
+    height: 450px!important;
+  }
+  .imagenArmonica{
+    background-position: -3rem 5rem;
+    background-size: 64rem;
+  }
+}
+
+/* IPAD */
+@media screen and (min-width: 769px) and (max-width: 1200px){  
+  .ArmonicaContenedor{
+    height: 420px;
+  }
+  .imagenArmonica{
+    background-position: -3rem 4.4rem;
+    background-size: 55rem;
+  }  
+}
+
+@media screen and (min-width: 1450px) and (max-width: 1800px){   
+  .imagenArmonica{
+    background-position: -4rem 6.8rem;
+    background-size: 80rem;  
+  }
+}
+
+
+
+footer {   
+  left: 0;
+  position: relative;
+  right: 0;    
+  bottom: 10px;   
+  z-index: 10;   
+}
+footer div.social-media-links {
+  /* background: #889499; */
+  overflow: hidden;
+  padding-bottom: 4px;
+  text-align: center;
+  height: 60px;
+}
+footer div.social-media-links ul {
+  margin: 0;
+  padding: 0;
+}
+footer div.social-media-links li {
+  display: inline;
+  margin: 0;
+  padding: 0;
+}
+footer div.social-media-links a {
+  border-bottom: 0px solid rgba(0, 0, 0, 0.95);
+  border-radius: 4px;
+  box-shadow: inset 0 -3px 0 0 rgba(0, 0, 0, 0), 0 6px 8px rgba(0, 0, 0, 0), 0 24px 24px rgba(0, 0, 0, 0), 0 36px 36px rgba(0, 0, 0, 0), 0 64px 64px rgba(0, 0, 0, 0), 0 64px 128px rgba(0, 0, 0, 0), 0 120px 0 rgba(0, 0, 0, 0), 0 86px 8px 6px rgba(0, 0, 0, 0);
+  display: inline-block;
+  height: 30px;
+  padding: 20px;
+  position: relative;
+  -webkit-transition: 0.2s ease-in;
+  transition: 0.2s ease-in;
+  width: 30px;
+  margin:10px
+}
+footer div.social-media-links a svg {
+  left: 2px;
+  position: absolute;
+  top: 7px;
+  height: 35px;
+  width: 35px;
+}
+footer div.social-media-links a svg.glow path,
+footer div.social-media-links a svg.glow circle {
+  fill: rgba(0, 0, 0, 0);
+}
+footer div.social-media-links a svg path,
+footer div.social-media-links a svg circle {
+  fill: $primary-color;
+  -webkit-transition: 0.2s ease-in;
+  transition: 0.2s ease-in;
+}
+footer div.social-media-links a:hover {
+  -webkit-transform: translateY(-4px);
+          transform: translateY(-4px);
+  box-shadow: inset 0 -3px 0 0 rgba(0, 0, 0, 0.1), 0 6px 8px rgba(0, 0, 0, 0.05), 0 24px 24px rgba(0, 0, 0, 0.05), 0 36px 36px rgba(0, 0, 0, 0.05), 0 64px 64px rgba(0, 0, 0, 0.15), 0 64px 128px rgba(0, 0, 0, 0.15), 0 86px 8px 6px rgba(14, 186, 199, 0.25), 0 83px 4px 0px rgba(14, 186, 199, 0.95);
+}
+footer div.social-media-links a:hover svg.glow {
+  filter: url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg"><f…ter id="filter"><feGaussianBlur stdDeviation="10" /></filter></svg>#filter');
+  -webkit-filter: blur(2px);
+          filter: blur(2px);
+}
+footer div.social-media-links a:hover svg.glow path,
+footer div.social-media-links a:hover svg.glow circle {
+  fill: rgba(14, 186, 199, 0.6);
+}
+footer div.social-media-links a:hover svg path,
+footer div.social-media-links a:hover svg circle {
+  fill: $primary-color;
+}
+
+.developedBy{
+  display: flex;
+  position: inherit;
+  margin-top: 25px;
+  margin-left: 25px;
+  color: $primary-color;
+  opacity: 0.5;
+}
