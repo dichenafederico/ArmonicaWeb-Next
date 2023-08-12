@@ -1,10 +1,10 @@
 const path = require('path')
 module.exports = {
+    swcMinify: false,
     sassOptions: {
         includePaths: [path.join(__dirname, 'styles')],
       },
-    webpack: (config, options) => {
-        
+    webpack: (config, options) => {       
 
         config.module.rules.push({
             test: /\.(jpe?g|png|svg|gif|ico|eot|ttf|woff|woff2|mp4|wav|pdf|webm|txt)$/,

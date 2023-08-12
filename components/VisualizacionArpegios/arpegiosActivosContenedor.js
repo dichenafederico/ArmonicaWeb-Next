@@ -1,4 +1,4 @@
-import React, { Component } from 'react'
+import { Component } from 'react'
 import ArpegioActivo from './arpegioActivo'
 import ButtonGroup from '@mui/material/ButtonGroup';
 

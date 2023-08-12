@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import { Component } from "react";
 import Microfono from "./habilitarMicrofono"
 
 window.AudioContext = window.AudioContext || window.webkitAudioContext;

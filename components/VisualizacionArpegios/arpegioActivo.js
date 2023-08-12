@@ -1,4 +1,4 @@
-import React, { Component } from 'react'
+import { Component } from 'react'
 import './arpegios.module.scss'
 import Button from '@mui/material/Button';
 

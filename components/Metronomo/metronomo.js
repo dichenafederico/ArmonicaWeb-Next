@@ -1,4 +1,4 @@
-import React, { Component, useEffect } from "react";
+import { Component, useEffect } from "react";
 import Typography from "@mui/material/Typography";
 import Checkbox from "@mui/material/Checkbox";
 import Tooltip from "@mui/material/Tooltip";
@@ -10,6 +10,15 @@ import iconoMetronomo from "../../public/iconos/metronome.svg";
 // Sound Files
 import click1 from "../../public/sonidos/click1.wav";
 import click2 from "../../public/sonidos/click2.wav";
+
+function createAudios() {
+  //TODO fix hook cant be called in class component, maybe refactor to function component
+
+  // useEffect(() => {
+  //   this.click1 = new Audio(click1);
+  //   this.click2 = new Audio(click2);
+  //   }, []);
+}
 
 export default class Metronomo extends Component {
   constructor(props) {
@@ -25,10 +34,7 @@ export default class Metronomo extends Component {
 
     // Create Audio objects with the files Webpack loaded,
     // and we'll play them later.
-    useEffect(() => {
-    this.click1 = new Audio(click1);
-    this.click2 = new Audio(click2);
-    }, []);
+    createAudios()
   }
 
   playClick = () => {
@@ -133,7 +139,32 @@ export default class Metronomo extends Component {
             name="checkedH"
           />
         </Tooltip>
-      </div>
+
+        <style jsx>{`
+      .metronome {
+        text-align: center;
+        max-width: 375px;
+        margin: 0 auto;
+        padding: 30px;
+      }
+      
+      .bpm-slider input {
+        width: 100%;
+        margin: 10px;
+      }
+      
+      .metronome button {
+        background: #c94d46;
+        padding: 10px;
+        border: 1px solid #832420;
+        border-radius: 2px;
+        width: 100px;
+        color: #fff;
+        font-size: 18px;
+      } 
+      `}</style>
+
+      </div>   
     );
   }
 }

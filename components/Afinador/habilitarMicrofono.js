@@ -1,6 +1,8 @@
-import React, { Component } from 'react'
+import { Component } from 'react'
 import MicIcon from '@mui/icons-material/Mic';
 import MicOffIcon from '@mui/icons-material/MicOff';
+import Tooltip from "@mui/material/Tooltip";
+import Checkbox from "@mui/material/Checkbox";
 
 export default class HabilitarMicrofono extends Component {
 
