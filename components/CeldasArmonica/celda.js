@@ -14,7 +14,7 @@ export default class Celda extends Component {
         let colorAfinacion = this.props.afinacion >= 95 ? "green" : "#8f8e8ef0";       
         let fondoAfinacion = this.props.afinacion != null ? "-webkit-linear-gradient(top, " + colorAfinacion  + " " + this.props.afinacion +"%, white 28%)" : color;    
         return (
-            <div class={className} style={{background:fondoAfinacion}}>
+            <div className={className} style={{background:fondoAfinacion}}>
                 <span className={clase} >{this.props.nota}</span>              
 
                 <style jsx>{`

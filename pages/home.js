@@ -279,7 +279,13 @@ class App extends Component {
 
         <Footer></Footer>
 
-        <style jsx>{`
+        <style jsx global>{`
+          $primary-color: #de6b62;
+
+          #root{
+            overflow: hidden; 
+          }
+          
           .App {
             text-align: center; 
             background-image: url(./iconos/light-grey-terrazzo.png);  
@@ -431,6 +437,90 @@ class App extends Component {
               background-size: 80rem;  
             }
           }
+          
+          
+          
+          footer {   
+            left: 0;
+            position: relative;
+            right: 0;    
+            bottom: 10px;   
+            z-index: 10;   
+          }
+          footer div.social-media-links {
+            /* background: #889499; */
+            overflow: hidden;
+            padding-bottom: 4px;
+            text-align: center;
+            height: 60px;
+          }
+          footer div.social-media-links ul {
+            margin: 0;
+            padding: 0;
+          }
+          footer div.social-media-links li {
+            display: inline;
+            margin: 0;
+            padding: 0;
+          }
+          footer div.social-media-links a {
+            border-bottom: 0px solid rgba(0, 0, 0, 0.95);
+            border-radius: 4px;
+            box-shadow: inset 0 -3px 0 0 rgba(0, 0, 0, 0), 0 6px 8px rgba(0, 0, 0, 0), 0 24px 24px rgba(0, 0, 0, 0), 0 36px 36px rgba(0, 0, 0, 0), 0 64px 64px rgba(0, 0, 0, 0), 0 64px 128px rgba(0, 0, 0, 0), 0 120px 0 rgba(0, 0, 0, 0), 0 86px 8px 6px rgba(0, 0, 0, 0);
+            display: inline-block;
+            height: 30px;
+            padding: 20px;
+            position: relative;
+            -webkit-transition: 0.2s ease-in;
+            transition: 0.2s ease-in;
+            width: 30px;
+            margin:10px
+          }
+          footer div.social-media-links a svg {
+            left: 2px;
+            position: absolute;
+            top: 7px;
+            height: 35px;
+            width: 35px;
+          }
+          footer div.social-media-links a svg.glow path,
+          footer div.social-media-links a svg.glow circle {
+            fill: rgba(0, 0, 0, 0);
+          }
+          footer div.social-media-links a svg path,
+          footer div.social-media-links a svg circle {
+            fill: $primary-color;
+            -webkit-transition: 0.2s ease-in;
+            transition: 0.2s ease-in;
+          }
+          footer div.social-media-links a:hover {
+            -webkit-transform: translateY(-4px);
+                    transform: translateY(-4px);
+            box-shadow: inset 0 -3px 0 0 rgba(0, 0, 0, 0.1), 0 6px 8px rgba(0, 0, 0, 0.05), 0 24px 24px rgba(0, 0, 0, 0.05), 0 36px 36px rgba(0, 0, 0, 0.05), 0 64px 64px rgba(0, 0, 0, 0.15), 0 64px 128px rgba(0, 0, 0, 0.15), 0 86px 8px 6px rgba(14, 186, 199, 0.25), 0 83px 4px 0px rgba(14, 186, 199, 0.95);
+          }
+          footer div.social-media-links a:hover svg.glow {
+            filter: url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg"><f…ter id="filter"><feGaussianBlur stdDeviation="10" /></filter></svg>#filter');
+            -webkit-filter: blur(2px);
+                    filter: blur(2px);
+          }
+          footer div.social-media-links a:hover svg.glow path,
+          footer div.social-media-links a:hover svg.glow circle {
+            fill: rgba(14, 186, 199, 0.6);
+          }
+          footer div.social-media-links a:hover svg path,
+          footer div.social-media-links a:hover svg circle {
+            fill: $primary-color;
+          }
+          
+          .developedBy{
+            display: flex;
+            position: inherit;
+            margin-top: 25px;
+            margin-left: 25px;
+            color: $primary-color;
+            opacity: 0.5;
+          }
+          
           `}</style>
 
       </div>
