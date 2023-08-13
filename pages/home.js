@@ -13,11 +13,11 @@ import Escalas from "../components/ListadoEscalas/escalas";
 import ModosGriegos from "../components/ListadoModosGriegos/modosGriegos";
 import TiposArpegios from "../components/VisualizacionArpegios/tiposArpegios";
 import ArpegiosActivosContenedor from "../components/VisualizacionArpegios/arpegiosActivosContenedor";
-import Metronomo from "../components/Metronomo/metronomo";
-// const Metronomo = dynamic(() => import("../components/Metronomo/metronomo"), {
-//   ssr: false,
-// });
-// import Afinador  from "../components/Afinador/afinador";
+//import Metronomo from "../components/Metronomo/metronomo";
+const Metronomo = dynamic(() => import("../components/Metronomo/metronomo"), {
+  ssr: false,
+});
+import "bootstrap/dist/css/bootstrap.min.css"; 
 const Afinador = dynamic(() => import("../components/Afinador/afinador"), {
   ssr: false,
 });
@@ -279,7 +279,8 @@ class App extends Component {
 
         <Footer></Footer>
 
-        <style jsx global>{`
+        <style jsx global>{`         
+
           $primary-color: #de6b62;
 
           #root{

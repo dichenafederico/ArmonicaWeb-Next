@@ -1,4 +1,4 @@
-import { Component, useEffect } from "react";
+import { Component, useEffect, useState } from "react";
 import Typography from "@mui/material/Typography";
 import Checkbox from "@mui/material/Checkbox";
 import Tooltip from "@mui/material/Tooltip";
@@ -11,96 +11,86 @@ import iconoMetronomo from "../../public/iconos/metronome.svg";
 import click1 from "../../public/sonidos/click1.wav";
 import click2 from "../../public/sonidos/click2.wav";
 
+let clickAudio1
+let clickAudio2
+
 function createAudios() {
   //TODO fix hook cant be called in class component, maybe refactor to function component
 
-  // useEffect(() => {
-  //   this.click1 = new Audio(click1);
-  //   this.click2 = new Audio(click2);
-  //   }, []);
+  useEffect(() => {
+    clickAudio1 = new Audio(click1);
+    clickAudio2 = new Audio(click2);
+  }, []);
 }
 
-export default class Metronomo extends Component {
-  constructor(props) {
-    super(props);
+export default function Metronomo() {
+  // constructor(props) {
+  //   super(props);
 
-    this.state = {
-      playing: false,
-      count: 0,
-      bpm: 100,
-      beatsPerMeasure: 4,
-      chordChange: false,
-    };
+  //   // Create Audio objects with the files Webpack loaded,
+  //   // and we'll play them later.
+  //   createAudios(this)
+  // }
 
-    // Create Audio objects with the files Webpack loaded,
-    // and we'll play them later.
-    createAudios()
-  }
+  let timer
 
-  playClick = () => {
-    const { count, beatsPerMeasure } = this.state;
+  const [playing, setPlaying] = useState(false)	
+  const [count, setCount] = useState(0)
+  const [bpm, setBpm] = useState(100)
+  const [beatsPerMeasure, setBeatsPerMeasure] = useState(4)
+  const [chordChange, setChordChange] = useState(false)
+  
+  createAudios()
+
+  const playClick = () => {   
 
     // The first beat will have a different sound than the others
     if (count % beatsPerMeasure === 0) {
-      this.click2.play();
+      clickAudio2.play();
       //cambia de acorde activo si el check esta activado
-      if (this.state.chordChange) this.props.cambioArpegio();
+      if (chordChange) props.cambioArpegio();
     } else {
-      this.click1.play();
+      clickAudio1.play();
     }
 
     // Keep track of which beat we're on
-    this.setState((state) => ({
-      count: (state.count + 1) % state.beatsPerMeasure,
-    }));
+    setCount((count + 1) % beatsPerMeasure)  
   };
 
-  startStop = () => {
-    if (this.state.playing) {
+  const startStop = () => {
+    if (playing) {
       // Stop the timer
-      clearInterval(this.timer);
-      this.setState({
-        playing: false,
-      });
+      clearInterval(timer);
+      setPlaying(false);
     } else {
       // Start a timer with the current BPM
-      this.timer = setInterval(this.playClick, (60 / this.state.bpm) * 1000);
-      this.setState(
-        {
-          count: 0,
-          playing: true,
-          // Play a click "immediately" (after setState finishes)
-        },
-        this.playClick
-      );
+      timer = setInterval(playClick, (60 / bpm) * 1000);
+      setCount(0);
+      setPlaying(true);
+      playClick()
     }
   };
 
-  handleBpmChange = (event) => {
-    const bpm = event.target.value;
+  const handleBpmChange = (event) => {
+    setBpm(event.target.value);
 
-    if (this.state.playing) {
+    if (playing) {
       // Stop the old timer and start a new one
-      clearInterval(this.timer);
-      this.timer = setInterval(this.playClick, (60 / bpm) * 1000);
+      clearInterval(timer);
+      timer = setInterval(playClick, (60 / bpm) * 1000);
 
       // Set the new BPM, and reset the beat counter
-      this.setState({
-        count: 0,
-        bpm,
-      });
+      setCount(0);
+      setBpm(bpm);
     } else {
       // Otherwise just update the BPM
-      this.setState({ bpm });
+      setBpm(bpm);      
     }
   };
 
-  handleCheckBox = (event) => {
-    this.state.chordChange = event.target.checked;
-  };
-
-  render() {
-    const { playing, bpm, chordChange } = this.state;
+  const handleCheckBox = (event) => {
+    setChordChange(event.target.checked);
+  };   
 
     function Estado() {
       if (playing) {
@@ -121,13 +111,13 @@ export default class Metronomo extends Component {
             min="60"
             max="240"
             value={bpm}
-            onChange={this.handleBpmChange}
+            onChange={handleBpmChange}
           />
         </div>
         <IconButton
           color="primary"
           aria-label="add to shopping cart"
-          onClick={this.startStop}
+          onClick={startStop}
         >
           <Estado />
         </IconButton>
@@ -135,7 +125,7 @@ export default class Metronomo extends Component {
           <Checkbox
             icon={<MusicNoteIcon />}
             checkedIcon={<MusicNoteIcon />}
-            onChange={this.handleCheckBox}
+            onChange={handleCheckBox}
             name="checkedH"
           />
         </Tooltip>
@@ -167,4 +157,4 @@ export default class Metronomo extends Component {
       </div>   
     );
   }
-}
+
