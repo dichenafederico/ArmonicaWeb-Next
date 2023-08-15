@@ -2,6 +2,7 @@ import { Component, useEffect, useState } from "react";
 import Typography from "@mui/material/Typography";
 import Checkbox from "@mui/material/Checkbox";
 import Tooltip from "@mui/material/Tooltip";
+import Slider from "@mui/material/Slider";
 import MusicNoteIcon from "@mui/icons-material/MusicNote";
 import IconButton from "@mui/material/IconButton";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
@@ -23,7 +24,7 @@ function createAudios() {
   }, []);
 }
 
-export default function Metronomo() {
+export default function Metronomo(props) {
   // constructor(props) {
   //   super(props);
 
@@ -32,7 +33,7 @@ export default function Metronomo() {
   //   createAudios(this)
   // }
 
-  let timer
+  let timer = setTimeout(() => {}, 0);
 
   const [playing, setPlaying] = useState(false)	
   const [count, setCount] = useState(0)
@@ -42,8 +43,8 @@ export default function Metronomo() {
   
   createAudios()
 
-  const playClick = () => {   
-
+  const playClick = () => {  
+    
     // The first beat will have a different sound than the others
     if (count % beatsPerMeasure === 0) {
       clickAudio2.play();
@@ -58,6 +59,7 @@ export default function Metronomo() {
   };
 
   const startStop = () => {
+    debugger;
     if (playing) {
       // Stop the timer
       clearInterval(timer);
@@ -70,21 +72,20 @@ export default function Metronomo() {
       playClick()
     }
   };
-
-  const handleBpmChange = (event) => {
-    setBpm(event.target.value);
+ 
+  const handleBpmChange = (event, newValue) => {  
 
     if (playing) {
       // Stop the old timer and start a new one
+      
       clearInterval(timer);
-      timer = setInterval(playClick, (60 / bpm) * 1000);
-
+      timer = setInterval(playClick, (60 / newValue) * 1000);
       // Set the new BPM, and reset the beat counter
       setCount(0);
-      setBpm(bpm);
+      setBpm(newValue);
     } else {
       // Otherwise just update the BPM
-      setBpm(bpm);      
+      setBpm(newValue);    
     }
   };
 
@@ -104,13 +105,15 @@ export default function Metronomo() {
         <Typography variant="h6">
           <img src={iconoMetronomo} height={50} />
         </Typography>
+       
         <div className="bpm-slider">
           <div>{bpm} BPM</div>
-          <input
-            type="range"
-            min="60"
-            max="240"
+          <Slider        
+            defaultValue={100}         
             value={bpm}
+            step={5}          
+            min={60}
+            max={240}
             onChange={handleBpmChange}
           />
         </div>
