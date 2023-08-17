@@ -17,9 +17,10 @@ const Metronomo = ({ cambioArpegio }) => {
   const [bpm, setBpm] = useState(120);
   const [currentBeat, setCurrentBeat] = useState(0)
   const latestCurrentBeat = useRef(currentBeat);
+  const [chordChange, setChordChange] = useState(false)
+  const changeChords = useRef(chordChange);
   const beatsPerCompass = 4; 
   const [beatsPerMeasure, setBeatsPerMeasure] = useState(4)
-  const [chordChange, setChordChange] = useState(false)
   const audioRef1 = useRef(null);
   const audioRef2 = useRef(null);
   const intervalRef = useRef(null);
@@ -32,6 +33,10 @@ const Metronomo = ({ cambioArpegio }) => {
   useEffect(() => {
     latestCurrentBeat.current = currentBeat;
   }, [currentBeat]);
+
+  useEffect(() => {
+    changeChords.current = chordChange;
+  }, [chordChange]);
 
   const startMetronome = () => {
     if (!isPlaying) {
@@ -60,7 +65,7 @@ const Metronomo = ({ cambioArpegio }) => {
   const playAudio = () => {       
     if (latestCurrentBeat.current === 0) {
       audioRef2.current.play(); // Play audio 1 for the first beat of the compass
-      if (chordChange) cambioArpegio();
+      if (changeChords.current) cambioArpegio();
     } else {
       audioRef1.current.play(); // Play audio 2 for the other beats
     }
