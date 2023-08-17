@@ -12,10 +12,11 @@ import iconoMetronomo from "../../public/iconos/metronome.svg";
 import click1 from "../../public/sonidos/click1.wav";
 import click2 from "../../public/sonidos/click2.wav";
 
-const Metronomo = () => {
+const Metronomo = ({ cambioArpegio }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [bpm, setBpm] = useState(120);
   const [currentBeat, setCurrentBeat] = useState(0)
+  const latestCurrentBeat = useRef(currentBeat);
   const beatsPerCompass = 4; 
   const [beatsPerMeasure, setBeatsPerMeasure] = useState(4)
   const [chordChange, setChordChange] = useState(false)
@@ -28,9 +29,14 @@ const Metronomo = () => {
     audioRef2.current = new Audio(click2);
   }, []);
 
+  useEffect(() => {
+    latestCurrentBeat.current = currentBeat;
+  }, [currentBeat]);
+
   const startMetronome = () => {
     if (!isPlaying) {
-      setIsPlaying(true);      
+      setIsPlaying(true); 
+      setCurrentBeat(0);     
       intervalRef.current = setInterval(playAudio, (60 / bpm) * 1000);
     }
   };
@@ -51,14 +57,15 @@ const Metronomo = () => {
     clearInterval(intervalRef.current);
   };
 
-  const playAudio = () => {    
-    if (currentBeat === 0) {
-      audioRef1.current.play(); // Play audio 1 for the first beat of the compass
+  const playAudio = () => {       
+    if (latestCurrentBeat.current === 0) {
+      audioRef2.current.play(); // Play audio 1 for the first beat of the compass
+      if (chordChange) cambioArpegio();
     } else {
-      audioRef2.current.play(); // Play audio 2 for the other beats
+      audioRef1.current.play(); // Play audio 2 for the other beats
     }
-
-    setCurrentBeat((currentBeat + 1) % beatsPerCompass);
+    const newBeat = (latestCurrentBeat.current + 1) % beatsPerCompass;
+    setCurrentBeat(newBeat);
     };
 
   const handleBpmChange = (e) => {
