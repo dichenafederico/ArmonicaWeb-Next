@@ -1,14 +1,22 @@
-import { Component } from 'react';
+import React, { Component } from 'react';
 import PropTypes from 'prop-types'
 import Celda from './celda'
+import ArmonicaDiatonica from '/TeoriaMusical/armonicaDiatonica';  // Adjust the path as needed
+import ArmonicaCromatica from '/TeoriaMusical/armonicaCromatica';  // Adjust the path as needed
 
 export default class Celdas extends Component {   
     constructor(props) {
         super(props);       
-      }
+      } 
+      render() {
 
-      render() {return (           
-          <div id="table" >
+         // Set margin based on the harmonica type
+         const marginStyle = this.props.armonica instanceof ArmonicaDiatonica
+         ? { marginTop: '0px' }
+         : { marginTop: '74px' };  // Or any other value for different harmonica types
+        
+        return (           
+          <div id="table" style={marginStyle} >
             {   
               this.props.armonica.celdas.map( celda => {
                 let activa = false;

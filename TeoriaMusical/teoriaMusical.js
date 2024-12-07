@@ -77,25 +77,30 @@ export const TiposArpegios = {
 
 export const ArpegiosRepo = [TiposArpegios.maj7,TiposArpegios.maj,TiposArpegios.min,TiposArpegios.novena,TiposArpegios.dim,TiposArpegios.dom,TiposArpegios.m7b5,TiposArpegios.m7]
 
+export const TipoArmonizacion = {
+   Mayor: { value: 1, name: "Mayor"},
+   Menor: { value: 2, name: "Menor"}  
+};
+
 export const AcordesArmonizacionEscalaMayor = [
    TiposArpegios.maj7,
    TiposArpegios.m7,
    TiposArpegios.m7,
    TiposArpegios.maj7,
    TiposArpegios.dom,
-   TiposArpegios.m7b5,
    TiposArpegios.m7,
+   TiposArpegios.m7b5,
 ];
 
 //TODO? : Construir a partir de ordenamietno de la escalaMayor??
 export const AcordesArmonizacionEscalaMenor = [
+   TiposArpegios.m7,
+   TiposArpegios.m7b5,
    TiposArpegios.maj7,
    TiposArpegios.m7,
    TiposArpegios.m7,
    TiposArpegios.maj7,
    TiposArpegios.dom,
-   TiposArpegios.m7b5,
-   TiposArpegios.m7,
 ];
 
 //Escalas

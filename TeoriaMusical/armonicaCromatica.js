@@ -46,6 +46,8 @@ var sliceAspirado2 = new Celda(2 , tipoCeldas.SliceAspirado, "Vm" );
 var sliceAspirado3 = new Celda(3 , tipoCeldas.SliceAspirado, "VIIm" );
 var sliceAspirado4 = new Celda(4 , tipoCeldas.SliceAspirado, "I" );
 
+var sliceAspirado12 = new Celda(4 , tipoCeldas.SliceAspirado, "II" );
+
 var octavaCompleta = [
     celda1,celda2,celda3,celda4,
     soplado1,soplado2,soplado3,soplado4,
@@ -54,7 +56,7 @@ var octavaCompleta = [
     sliceAspirado1,sliceAspirado2,sliceAspirado3,sliceAspirado4
 ];
 
-export class ArmonicaCromatica{
+export default class ArmonicaCromatica{
     constructor(cantidadOctavas){
         //this.tonalidad = new Tonalidad(tonalidad);       
         this.celdas = [];
@@ -64,16 +66,15 @@ export class ArmonicaCromatica{
     
     GenerarOctavas(celdasOctava, cantidadOctavas){
         celdasOctava.forEach(celda => {           
-            for (let index = 1; index < cantidadOctavas; index++) {
-                var nroCelda = celda.agujero + (4 * index);   
+            for (let octava = 1; octava < cantidadOctavas; octava++) {
+                var nroCelda = celda.agujero + (4 * octava);   
+                if(nroCelda == 12 && celda.tipoNota == 6 ) celda = sliceAspirado12;
                 var stringCelda = celda.gradoArmonia;      
-                if(celda.tipoNota == 4) stringCelda = (parseInt(celda.gradoArmonia) + (4 * index)).toString();
+                if(celda.tipoNota == 4) stringCelda = (parseInt(celda.gradoArmonia) + (4 * octava)).toString();
+                
                 this.celdas.push(new Celda(nroCelda , celda.tipoNota, stringCelda));            
             }
         })
     }
 
 }
-
-//export const ArmonicaActiva = new ArmonicaCromatica(4);
-export const ArmonicaActiva = new ArmonicaCromatica(3);

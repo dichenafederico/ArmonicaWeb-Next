@@ -100,7 +100,7 @@ var segundoBend10 = new Celda(10, tipoCeldas.SegundoBendSoplado, "VIIm" );
 var over10 = new Celda(10, tipoCeldas.OverBlow, "IIm" );
 
 
-export class ArmonicaDiatonica {
+export default class ArmonicaDiatonica {
     constructor(){
         //this.tonalidad = new Tonalidad(tonalidad);
         this.celdas = [
@@ -116,14 +116,6 @@ export class ArmonicaDiatonica {
     //     this.tonalidad =  new Tonalidad(newTonalidad);
     //   }   
 }
-
-export const ArmonicaActiva = new ArmonicaDiatonica();
-
-
-
-
-
-
 
 
 

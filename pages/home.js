@@ -5,10 +5,12 @@ import Footer from "../components/Contenedores/footer";
 import ArmonicasTonalidades from "../components/ListadoArmonicas/armonicasTonalidades";
 import Posiciones from "../components/ListadoPosiciones/posiciones";
 import Celdas from "../components/CeldasArmonica/celdas";
-import { ArmonicaActiva } from "../TeoriaMusical/armonicaDiatonica";
-import * as TeoriaMusical from "../TeoriaMusical/teoriaMusical";
-import Tonalidad from "../TeoriaMusical/tonalidad";
-import Arpegio from "../TeoriaMusical/arpegio";
+import ArmonicaActiva from "../components/ArmonicaActiva/ArmonicaActiva";
+import ArmonicaDiatonica from "/TeoriaMusical/armonicaDiatonica";
+import ArmonicaCromatica  from "/TeoriaMusical/armonicaCromatica";
+import * as TeoriaMusical from "/TeoriaMusical/teoriaMusical";
+import Tonalidad from "/TeoriaMusical/tonalidad";
+import Arpegio from "/TeoriaMusical/arpegio";
 import Escalas from "../components/ListadoEscalas/escalas";
 import ModosGriegos from "../components/ListadoModosGriegos/modosGriegos";
 import TiposArpegios from "../components/VisualizacionArpegios/tiposArpegios";
@@ -22,15 +24,16 @@ import Microfono from "../components/Afinador/habilitarMicrofono";
 import AddIcon from "@mui/icons-material/Add";
 import IconButton from "@mui/material/IconButton";
 import { Container, Row, Col } from "react-bootstrap";
-import { Tooltip } from "@mui/material";
+import { Tooltip, Select, MenuItem } from "@mui/material";
 
 class App extends Component {
   constructor(props) {
     super(props);
     this.state = {
       tonalidadActiva: TeoriaMusical.tonalidadArmonicaActiva,
+      tonalidadArmoniaActiva: TeoriaMusical.tonalidadArmonicaActiva,
       armonizacion: TeoriaMusical.tonalidadArmonicaActiva.getArmonizacionEscala(),
-      armonica: ArmonicaActiva,
+      armonica: new ArmonicaDiatonica(),
       posiciones: TeoriaMusical.PosicionesArmonica,
       escalas: TeoriaMusical.EscalasDefinidas,
       modos: TeoriaMusical.modosGriegos,
@@ -50,10 +53,32 @@ class App extends Component {
     console.log(TeoriaMusical.tonalidadArmonicaActiva.tonalidad);
   }
 
+   // Function to change the harmonica type
+   cambiarArmonica = () => {
+    this.setState((prevState) => ({
+      armonica: prevState.armonica instanceof ArmonicaDiatonica
+        ? new ArmonicaCromatica(3)
+        : new ArmonicaDiatonica()
+    }));
+  };
+
   cambiarTonalidadActiva = (e) => {
     var nuevaTonalidad = new Tonalidad(TeoriaMusical.Notas[e.target.value]);
-    this.setState({ tonalidadActiva: nuevaTonalidad });
-    this.setState({ armonizacion: nuevaTonalidad.getArmonizacionEscala() });
+    if (this.state.armonica instanceof ArmonicaDiatonica) {
+      this.setState({ tonalidadActiva: nuevaTonalidad });      
+    }
+    this.setState({ armonizacion: nuevaTonalidad.getArmonizacionEscala(this.state.modoArmonia) });
+  };
+
+  cambiarArmoniaActiva = (e) => {   
+    var nuevaTonalidad = new Tonalidad(TeoriaMusical.Notas[e.target.value]);
+    this.setState({ tonalidadArmoniaActiva: nuevaTonalidad });
+    this.setState({ armonizacion: nuevaTonalidad.getArmonizacionEscala(this.state.modoArmonia) });
+  };
+
+  cambiarModoArmoniaActiva = (e) => {      
+    this.setState({ modoArmonia: e.target.value }); 
+    this.setState({ armonizacion: this.state.tonalidadArmoniaActiva.getArmonizacionEscala(e.target.value) });
   };
 
   cambiarPosicionActiva = (e) =>
@@ -90,12 +115,18 @@ class App extends Component {
     this.setState({ tipoArpegioSeleccionado: e.target.value });
   };
 
-  cambiarTonoArpegioSeleccionado = (e) =>
+  cambiarTonoArpegioSeleccionado = (e) => {
+    let tonalidad = new Tonalidad(TeoriaMusical.Notas[e.target.value])
     this.setState({
-      tonoArpegioSeleccionado: new Tonalidad(
-        TeoriaMusical.Notas[e.target.value]
+      tonoArpegioSeleccionado: tonalidad
+    });
+    this.setState({
+      armoniaActiva: tonalidad.getArmonia(
+        this.state.tipoArpegioSeleccionado.gradosArpegio
       ),
     });
+    this.setState({ tipoArpegioSeleccionado: this.state.tonoArpegioSeleccionado});
+  }
 
   agregarArpegioActivo = () => {
     var nuevoArpegio = new Arpegio(
@@ -134,15 +165,36 @@ class App extends Component {
         <div className={"filtros"}>
           {/* <div className={"combosIzquierda"}> */}
           <Row>
+          {this.state.armonica instanceof ArmonicaDiatonica ? (
             <Col md={3}>
               <div>
-                <label>Tonalidad</label>
+                <label>Tonalidad Armónica Diatonica</label>
                 <ArmonicasTonalidades
                   tonalidades={TeoriaMusical.TonalidadesArmonia}
                   onChangeValue={this.cambiarTonalidadActiva}
-                ></ArmonicasTonalidades>
+                />
               </div>
             </Col>
+          ) : (
+            <Col md={3}>
+              <div>
+                <label>Tonalidad Armonia</label>
+                <ArmonicasTonalidades
+                  tonalidades={TeoriaMusical.TonalidadesArmonia}
+                  onChangeValue={this.cambiarArmoniaActiva}
+                />
+                <Select value={this.state.modoArmonia} onChange={this.cambiarModoArmoniaActiva}>
+                {Object.values(TeoriaMusical.TipoArmonizacion).map((tipo) => (
+                  <MenuItem key={tipo.value} value={tipo.value}>
+                    {tipo.name}
+                  </MenuItem>
+                ))}
+              </Select>
+              </div>
+             
+            </Col>
+            
+          )}
             <Col md={4}>
               <label>Posición</label>
               <Posiciones
@@ -237,6 +289,7 @@ class App extends Component {
               </div>
             </Col>
             <Col md={1}>
+              <ArmonicaActiva cambiarArmonica={this.cambiarArmonica}></ArmonicaActiva>
               <Afinador handlerNotaAudio={this.obtenerNotaAudio}></Afinador>
             </Col>
           </Row>

@@ -1,5 +1,7 @@
-import { Component } from "react";
+import React, { Component } from "react";
 import Microfono from "./habilitarMicrofono"
+
+var MIN_SIGNAL_THRESHOLD = 0.08; 
 
 window.AudioContext = window.AudioContext || window.webkitAudioContext;
 
@@ -89,6 +91,7 @@ export default class afinador extends Component {
     }
   }
 
+  
   updatePitch(time) {    
    
     var cycles = new Array();
@@ -157,7 +160,8 @@ export default class afinador extends Component {
 
     if (!window.requestAnimationFrame)
       window.requestAnimationFrame = window.webkitRequestAnimationFrame;
-    rafID = window.requestAnimationFrame(this.updatePitch.bind(this)); 
+    
+    rafID = window.requestAnimationFrame(this.updatePitch.bind(this));
     
   }
 
@@ -309,11 +313,23 @@ export default class afinador extends Component {
 	*/
 
   autoCorrelate(buf, sampleRate) {
+
     var SIZE = buf.length;
     var MAX_SAMPLES = Math.floor(SIZE / 2);
-    var best_offset = -1;
-    var best_correlation = 0;
     var rms = 0;
+  
+    for (var i = 0; i < SIZE; i++) {
+      var val = buf[i];
+      rms += val * val;
+    }
+    rms = Math.sqrt(rms / SIZE);
+  
+    if (rms < MIN_SIGNAL_THRESHOLD) { // Set MIN_SIGNAL_THRESHOLD to an appropriate value, e.g., 0.02
+      return -1;
+    }
+
+    var best_offset = -1;
+    var best_correlation = 0;   
     var foundGoodCorrelation = false;
     var correlations = new Array(MAX_SAMPLES);
 
@@ -372,7 +388,7 @@ export default class afinador extends Component {
   render() {
     //return null
     return(
-      <div>
+      <div style={{marginTop: '15px'}}>
         <Microfono stream={this.state.stream} handlerMicrofono={this.cambiarEstadoMicrofono} ></Microfono>
       </div>
     )
