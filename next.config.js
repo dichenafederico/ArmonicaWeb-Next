@@ -1,6 +1,9 @@
 const path = require('path')
 module.exports = {
     swcMinify: false,
+    output: 'export',
+    basePath: '/ArmonicaWeb-Next',
+    assetPrefix: '/ArmonicaWeb-Next/',
     sassOptions: {
         includePaths: [path.join(__dirname, 'styles')],
       },
