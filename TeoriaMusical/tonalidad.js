@@ -2,6 +2,7 @@ import Arpegio from './arpegio'
 import {TiposArpegios} from './teoriaMusical'
 import {Notas} from './teoriaMusical'
 import {AcordesArmonizacionEscalaMayor} from './teoriaMusical'
+import {AcordesArmonizacionEscalaMenor} from './teoriaMusical'
 import {ArmonizacionEscala} from './teoriaMusical'
 
 export default class Tonalidad{
@@ -47,13 +48,13 @@ export default class Tonalidad{
         }     
      }
   
-   getArmonizacionEscala = () => {
+   getArmonizacionEscala = (modo) => {
         var armonizacionEscalaTonalidad = [];      
         for (let index = 0; index < 7; index++) {
            var grado = ArmonizacionEscala[index];
            var tonica = this.tonalidad[grado];
            var nota = Notas[tonica.code];
-           var tipoArpegio = AcordesArmonizacionEscalaMayor[index];
+           var tipoArpegio = modo == 1 ? AcordesArmonizacionEscalaMayor[index] : AcordesArmonizacionEscalaMenor[index];
            var arpegioCorrespondiente = new Arpegio(tipoArpegio, nota);
            armonizacionEscalaTonalidad.push(arpegioCorrespondiente);
         }
