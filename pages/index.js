@@ -10,6 +10,7 @@ import ArmonicaDiatonica from "/TeoriaMusical/armonicaDiatonica";
 import ArmonicaCromatica  from "/TeoriaMusical/armonicaCromatica";
 import * as TeoriaMusical from "/TeoriaMusical/teoriaMusical";
 import Tonalidad from "/TeoriaMusical/tonalidad";
+import Escala from "/TeoriaMusical/escala";
 import Arpegio from "/TeoriaMusical/arpegio";
 import Escalas from "../components/ListadoEscalas/escalas";
 import ModosGriegos from "../components/ListadoModosGriegos/modosGriegos";
@@ -42,7 +43,9 @@ class App extends Component {
       armonica: new ArmonicaDiatonica(),
       posiciones: TeoriaMusical.PosicionesArmonica,
       escalas: TeoriaMusical.EscalasDefinidas,
+      escalaActiva: null,
       modos: TeoriaMusical.modosGriegos,
+      modoActivo: null,
       modoArmonia: TeoriaMusical.TipoArmonizacion.Mayor,
       tiposArpegios: TeoriaMusical.ArpegiosRepo,
       posicionActivaItem: 1,
@@ -110,15 +113,23 @@ class App extends Component {
       ),
     });
 
-  cambioArmoniaActiva = (e) =>
+  cambioArmoniaActiva = (e) => {
     this.setState({
       armoniaActiva: this.state.tonalidadActiva
         .getPosicion(this.state.posicionActivaItem)
-        .getArmonia(e.target.value),
+        .getArmonia(e.target.value.gradosEscala),
+    });
+    this.setState({
+      escalaActiva: e.target.value
     });
 
-  cambioArmoniaActivaModo = (e) =>
+  }
+
+  cambioArmoniaActivaModo = (e) => {
     this.setState({ armoniaActiva: e.target.value.getArmonia() });
+    this.setState({ modoActivo: e.target.value });
+  }
+
 
   cambioArmoniaActivaArpegio = (e) => {
     this.setState({ armoniaActiva: e.arpegio });
@@ -143,6 +154,34 @@ class App extends Component {
         )
     });
   }
+
+  //TODO: refactor agregar arpegio activo, integrar interfaz para que funcionen de la misma menera modos, escalas y arpegios
+
+  agregarEscalaActiva = () => {
+    const { tonalidadActiva, escalaActiva } = this.state;
+
+    var escala = escalaActiva.obtenerNotas(tonalidadActiva.tonica);
+
+    const arpegio = {
+      nombre: tonalidadActiva.tonica.name + " " + escalaActiva.nombre,
+      arpegio: escala,
+    }
+   
+    this.agregarArpegioActivo(arpegio);
+  };
+
+  agregarModoActivo = () => {
+    const { tonalidadActiva, modoActivo } = this.state;
+
+    var modo = modoActivo.getArmonia(tonalidadActiva.tonica);
+
+    const arpegio = {
+      nombre: tonalidadActiva.tonica.name + " " + modoActivo.nombre,
+      arpegio: modo,
+    }
+   
+    this.agregarArpegioActivo(arpegio);
+  };
 
   armarArpegioParaAgregar = () => {
     const { tipoArpegioSeleccionado, tonoArpegioSeleccionado } = this.state;
@@ -191,8 +230,7 @@ class App extends Component {
     return (
       <div className="App">      
         <Header></Header>
-        <div className={"filtros"}>
-          {/* <div className={"combosIzquierda"}> */}
+        <div className={"filtros"}>          
           <Row>
           {this.state.armonica instanceof ArmonicaDiatonica ? (
             <Col md={3}>
@@ -230,7 +268,8 @@ class App extends Component {
              
             </Col>
             
-          )}
+          )}        
+          {this.state.armonica instanceof ArmonicaDiatonica ? (  
             <Col md={4}>
               <label>Posición</label>
               <Posiciones
@@ -248,18 +287,33 @@ class App extends Component {
                 }
               ></ArmonicasTonalidades>
             </Col>
+          ) : ""  }
             <Col md={5}>
               <div>
                 <label>Escalas</label>
                 <Escalas
                   escalas={this.state.escalas}
                   onChangeValue={this.cambioArmoniaActiva}
-                ></Escalas>
+                ></Escalas>                 
+                <IconButton
+                  color="primary"
+                  onClick={this.agregarEscalaActiva}
+                  style={{ marginLeft: 15 }}
+                >
+                  <AddIcon />                  
+                </IconButton>                    
                 <label>Modos</label>
                 <ModosGriegos
                   modos={this.state.modos}
                   onChangeValue={this.cambioArmoniaActivaModo}
-                ></ModosGriegos>
+                ></ModosGriegos>                
+                <IconButton
+                  color="primary"
+                  onClick={this.agregarModoActivo}
+                  style={{ marginLeft: 15 }}
+                >
+                  <AddIcon />                  
+                </IconButton>       
               </div>
             </Col>
           </Row>

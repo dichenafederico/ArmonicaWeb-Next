@@ -22,6 +22,7 @@ export default class Tonalidad{
            VIIm: { value: 11, name: "VIIm", code: "" },
            VII: { value: 12, name: "VII", code: "" },
         }
+        this.tonica = tonica;
         this.SetearTonalidad(tonica, this.tonalidad)
      };
      

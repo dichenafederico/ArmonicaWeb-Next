@@ -8,7 +8,7 @@ export class Escalas extends Component {
             <Select onChange={this.props.onChangeValue} style={{marginLeft:15}}>
                 { 
                     this.props.escalas.map( escala => {
-                        return <MenuItem value={escala.gradosEscala} >{escala.nombre}</MenuItem>
+                        return <MenuItem value={escala} >{escala.nombre}</MenuItem>
                     }) 
                 }
             </Select>
