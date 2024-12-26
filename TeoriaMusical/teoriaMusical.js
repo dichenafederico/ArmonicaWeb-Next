@@ -46,17 +46,17 @@ export const TonalidadesArmonia = [
 //Enum - Objeto
 export const Notas = {
    C: { value: 1, name: "C", code: "C" },
-   Db: { value: 1.5, name: "C#", code: "Db" },
-   D: { value: 2, name: "D", code: "D" },
-   Eb: { value: 2.5, name: "D#", code: "Eb" },
-   E: { value: 3, name: "E", code: "E" },
-   F: { value: 3.5, name: "F", code: "F" },
-   Gb: { value: 4, name: "F#", code: "Gb" },
-   G: { value: 4.5, name: "G", code: "G" },
-   Ab: { value: 5, name: "G#", code: "Ab" },
-   A: { value: 5.5, name: "A", code: "A" },
-   Bb: { value: 6, name: "A#", code: "Bb" },
-   B: { value: 6.5, name: "B", code: "B" },
+   Db: { value: 2, name: "C#", code: "Db" },
+   D: { value: 3, name: "D", code: "D" },
+   Eb: { value: 4, name: "D#", code: "Eb" },
+   E: { value: 5, name: "E", code: "E" },
+   F: { value: 6, name: "F", code: "F" },
+   Gb: { value: 7, name: "F#", code: "Gb" },
+   G: { value: 8, name: "G", code: "G" },
+   Ab: { value: 9, name: "G#", code: "Ab" },
+   A: { value: 10, name: "A", code: "A" },
+   Bb: { value: 11, name: "A#", code: "Bb" },
+   B: { value: 12, name: "B", code: "B" },
 };
 
 export const tonalidadArmonicaActiva = new Tonalidad(Notas.C);

@@ -6,7 +6,7 @@ import { MenuItem } from '@mui/material';
 
 export default class ArmonicasTonalidades extends Component {
     static propTypes = {
-        prop: PropTypes
+        prop: PropTypes.func
     }
 
     render() {

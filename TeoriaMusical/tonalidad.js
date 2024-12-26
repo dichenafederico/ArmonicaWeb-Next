@@ -3,6 +3,7 @@ import {TiposArpegios} from './teoriaMusical'
 import {Notas} from './teoriaMusical'
 import {AcordesArmonizacionEscalaMayor} from './teoriaMusical'
 import {AcordesArmonizacionEscalaMenor} from './teoriaMusical'
+import {TipoArmonizacion} from './teoriaMusical'
 import {ArmonizacionEscala} from './teoriaMusical'
 
 export default class Tonalidad{
@@ -54,7 +55,7 @@ export default class Tonalidad{
            var grado = ArmonizacionEscala[index];
            var tonica = this.tonalidad[grado];
            var nota = Notas[tonica.code];
-           var tipoArpegio = modo == 1 ? AcordesArmonizacionEscalaMayor[index] : AcordesArmonizacionEscalaMenor[index];
+           var tipoArpegio = modo == TipoArmonizacion.Menor.value ? AcordesArmonizacionEscalaMenor[index] : AcordesArmonizacionEscalaMayor[index];
            var arpegioCorrespondiente = new Arpegio(tipoArpegio, nota);
            armonizacionEscalaTonalidad.push(arpegioCorrespondiente);
         }
@@ -63,12 +64,32 @@ export default class Tonalidad{
      
      
    SetearTonalidad = (tonalidadArmonica, Armonica_Progresion) => {
-      var intervalo = tonalidadArmonica.value;
-      for (let index = 1; index < 13; index++) {
+      if (!tonalidadArmonica || !Armonica_Progresion) {
+         console.error('Invalid tonalidadArmonica or Armonica_Progresion');
+         return;
+       }
+   
+       var intervalo = tonalidadArmonica.value;
+       if (intervalo === undefined) {
+         console.error('Invalid tonalidadArmonica: missing value property');
+         return;
+       }
+   
+       for (let index = 1; index < 13; index++) {
          var gradoArmonia = this.ObtenerGradoArmonia(index, Armonica_Progresion);
+         if (!gradoArmonia) {
+           console.error(`Invalid gradoArmonia for index ${index}`);
+           continue;
+         }
+   
          var nota = this.ObtenerNota(intervalo);
-         gradoArmonia.code = nota.code;
-         intervalo == Notas.B.value ? intervalo = Notas.C.value : intervalo += 0.5;      
+         if (!nota) {
+           console.error(`Invalid nota for intervalo ${intervalo}`);
+           continue;
+         }
+
+         gradoArmonia.code = nota ? nota.code : "";
+         intervalo == Notas.B.value ? intervalo = Notas.C.value : intervalo += 1;      
       }
    }
 
