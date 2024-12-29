@@ -201,19 +201,12 @@ class App extends Component {
   };
 
   arpegiosActivosReproducirSiguiente = () => {
-    if (this.state.arpegiosActivos.length > 1) {
-      let arpegioReproduciendo =
-        this.state.arpegioReproduciendo == this.state.arpegiosActivos.length
-          ? 0
-          : this.state.arpegioReproduciendo;
-      this.cambioArmoniaActivaArpegio(
-        this.state.arpegiosActivos[arpegioReproduciendo]
-      );
-      var proximoArpegio = arpegioReproduciendo + 1;
-      this.setState({ arpegioReproduciendo: proximoArpegio });     
-      var arpegioReproducir = this.state.arpegiosActivos[proximoArpegio];
-      if (arpegioReproducir)
-        this.reproducirArpegioComoAcorde(arpegioReproducir);
+    const { arpegiosActivos } = this.props;
+    const { arpegioReproduciendo } = this.state;
+    if (arpegiosActivos.length > 1) {
+      let nextArpegioIndex = arpegioReproduciendo >= arpegiosActivos.length - 1 ? 0 : arpegioReproduciendo + 1;
+      this.cambioArmoniaActivaArpegio(arpegiosActivos[nextArpegioIndex]);
+      this.setState({ arpegioReproduciendo: nextArpegioIndex });
     }
   };
 
@@ -684,7 +677,7 @@ class App extends Component {
 }
 
 const mapStateToProps = (state) => ({
-  arpegiosActivos: state.arpegiosActivos,
+  arpegiosActivos: state.main.arpegiosActivos,
 });
 
 const ConnectedApp = connect(mapStateToProps)(App);
