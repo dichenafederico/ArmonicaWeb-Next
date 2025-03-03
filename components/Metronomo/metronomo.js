@@ -92,7 +92,7 @@ const Metronomo = ({ cambioArpegio }) => {
         <Slider        
           defaultValue={100}         
           value={bpm}
-          step={5}          
+          step={1}          
           min={60}
           max={240}
           onChange={handleBpmChange}

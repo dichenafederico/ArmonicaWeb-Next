@@ -14,7 +14,7 @@ export default class ArmonicaActiva extends Component {
     render() {
         return (
             <div>
-                <Tooltip title={<div><h6 style={{ color: "#ffa8a8" }}>Cambiar de armonica diatonica a cromatica</h6></div>} aria-label="add" arrow>
+                <Tooltip title="Cambiar de armonica diatonica a cromatica" aria-label="add" arrow>
                     <Checkbox style={{transform : "scale(2)"}} icon={<SwapHorizIcon />} onChange={this.changeHarmonicaType} name="armonica" />
                 </Tooltip>
             </div>

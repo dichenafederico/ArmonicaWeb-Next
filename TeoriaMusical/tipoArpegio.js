@@ -5,8 +5,8 @@ export default class TipoArpegio {
        this.nombre = nombre;
        this.codigo = codigo;
     }
-    get getGradosArpegio() {
-       return this.gradosArpegio;
-    }
+    gradosArpegio = () => {
+         return this.gradosArpegio;
+      }
  };
  

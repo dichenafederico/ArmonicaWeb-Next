@@ -16,11 +16,14 @@ const mainSlice = createSlice({
     setTipoArpegioSeleccionado: (state, action) => {
       state.tipoArpegioSeleccionado = action.payload;
     },
-    addArpegioActivo: (state, action) => {
+    addArpegioActivo: (state, action) => {     
       state.arpegiosActivos.push(action.payload)
     },
     removeArpegioActivo: (state) => {
       state.arpegiosActivos.pop();
+    },
+    trasposeArpegiosActivos: (state, action) => {
+      state.arpegiosActivos = action.payload;
     },
     setArmoniaActiva: (state, action) => {
       state.armoniaActiva = action.payload;
@@ -43,6 +46,7 @@ export const {
   setTipoArpegioSeleccionado,
   addArpegioActivo,
   removeArpegioActivo,
+  trasposeArpegiosActivos,
   setArmoniaActiva,
   setNombreArpegioActivo,
   resetState,

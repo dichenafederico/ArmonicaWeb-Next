@@ -19,7 +19,7 @@ import { ArpegiosActivosContenedorGral, ArpegiosActivosContenedorArmonizacion } 
 import ArpegiosArmonizacion from "../components/VisualizacionArpegios/arpegiosArmonizacion";
 import Metronomo from "../components/Metronomo/metronomo";
 import { Provider,connect } from 'react-redux';
-import store from '../Store/store';
+import store, { trasposeArpegiosActivos } from '../Store/store';
 import { addArpegioActivo, removeArpegioActivo } from '../Store/store';
 import "bootstrap/dist/css/bootstrap.min.css"; 
 const Afinador = dynamic(() => import("../components/Afinador/afinador"), {
@@ -95,6 +95,25 @@ class App extends Component {
     var nuevaTonalidad = new Tonalidad(TeoriaMusical.Notas[e.target.value]);
     this.setState({ tonalidadArmoniaActiva: nuevaTonalidad });
     this.setState({ armonizacion: nuevaTonalidad.getArmonizacionEscala(this.state.modoArmonia.value) });
+  };
+
+  trasponerArpegiosActivos = (e) => {
+    const { arpegiosActivos } = this.props;
+    const { tonalidadActiva } = this.state;
+    const tonalidad = new Tonalidad(TeoriaMusical.Notas[e.target.value]);    
+    const diferenciaGrados =  tonalidad.tonica.value - tonalidadActiva.tonica.value;  
+    const arpegiosTranspuestos = arpegiosActivos.map((arpegioPlain) => {        
+      const arpegio = new Arpegio(arpegioPlain.tipo, arpegioPlain.tonica,arpegioPlain.arpegioOriginal);      
+      var gradoArpegioTraspuesto = arpegio.arpegioOriginal.tonica.value;    
+      var trasponerGrado = gradoArpegioTraspuesto + diferenciaGrados;
+      trasponerGrado = trasponerGrado > 12 ? trasponerGrado - 12 : trasponerGrado < 0 ? trasponerGrado + 12 : trasponerGrado;
+      const nota = Object.values(TeoriaMusical.Notas).find(nota => nota.value == trasponerGrado)               
+      var tonalidadTraspuesta = new Tonalidad(nota);     
+      arpegio.trasponerArpegio(tonalidadTraspuesta)        
+      return arpegio      
+    });      
+    if  (arpegiosTranspuestos.length > 0)     
+      this.trasposeArpegiosActivos(arpegiosTranspuestos);    
   };
 
   cambiarModoArmoniaActiva = (e) => {  
@@ -198,7 +217,12 @@ class App extends Component {
 
   removeUltimoArpegio = () => {          
     this.props.dispatch(removeArpegioActivo()); 
-  };
+  };  
+
+  trasposeArpegiosActivos = (arpegiosTraspuestos) => {          
+    this.props.dispatch(trasposeArpegiosActivos(arpegiosTraspuestos)); 
+  };  
+
 
   arpegiosActivosReproducirSiguiente = () => {
     const { arpegiosActivos } = this.props;
@@ -312,7 +336,7 @@ class App extends Component {
           </Row>
 
           <Row>
-            <Col md={5}>
+            <Col md={4}>
               <label>Arpegios</label>
               <ArmonicasTonalidades
                 tonalidades={TeoriaMusical.TonalidadesArmonia}
@@ -342,7 +366,7 @@ class App extends Component {
               </Tooltip>
              
             </Col>
-            <Col>
+            <Col md={8}>
               <div className={"armoniaActiva"}>
                 <label>Intervalos:</label>
                 <label style={{ marginRight: 15, marginLeft: 15 }}>
@@ -364,12 +388,19 @@ class App extends Component {
                         .join(" - ")
                     : ""}
                 </label>
+                <Tooltip title="Se tomará como referencia C, armar progresion en base a C y luego trasponer">
+                <label>*Trasponer Arpegios a:</label>
+                <ArmonicasTonalidades
+                tonalidades={TeoriaMusical.TonalidadesArmonia}
+                onChangeValue={this.trasponerArpegiosActivos}                
+              ></ArmonicasTonalidades>
+              </Tooltip>
               </div>
             </Col>
           </Row>
 
           <Row style={{ "justify-content": "center" }}>
-            <Col md={11}>
+            <Col md={10}>
               <div style={{ marginTop: 15 }}>
                 <label style={{ marginRight: 15, fontSize: 30 }}>
                   {this.state.nombreArpegioActivo}
@@ -382,10 +413,15 @@ class App extends Component {
               )}
               </div>
             </Col>
-            <Col md={1}>
-              <ArmonicaActiva cambiarArmonica={this.cambiarArmonica}></ArmonicaActiva>
+            <Col md={2}>                       
+              <ArmonicaActiva cambiarArmonica={this.cambiarArmonica}></ArmonicaActiva>              
               <Afinador handlerNotaAudio={this.obtenerNotaAudio}></Afinador>
-            </Col>
+              
+            <Metronomo
+              cambioArpegio={this.arpegiosActivosReproducirSiguiente}
+            ></Metronomo>
+          </Col>
+           
           </Row>
         </div>
 
@@ -414,12 +450,7 @@ class App extends Component {
               armonica={this.state.armonica}
               notaAfinar={this.state.notaAfinando}
             ></Celdas>
-          </Col>         
-          <Col md={2}>
-            <Metronomo
-              cambioArpegio={this.arpegiosActivosReproducirSiguiente}
-            ></Metronomo>
-          </Col>
+          </Col>        
         </Row>
 
         <Footer></Footer>
