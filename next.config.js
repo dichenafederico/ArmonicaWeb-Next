@@ -1,6 +1,6 @@
 const path = require('path')
 module.exports = {
-    swcMinify: false,
+    //swcMinify: false,
     //output: 'export',
     //basePath: '/ArmonicaWeb-Next',
     //assetPrefix: '/ArmonicaWeb-Next/',
@@ -17,5 +17,8 @@ module.exports = {
             },
         });
       return config
+    },
+    turbopack: {
+        // Turbopack configuration
     },
   }

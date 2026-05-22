@@ -3,52 +3,56 @@ import { createSlice, configureStore } from '@reduxjs/toolkit';
 const mainSlice = createSlice({
   name: 'main',
   initialState: {
-    tonoArpegioSeleccionado: null,
-    tipoArpegioSeleccionado: null,
-    arpegiosActivos: [],
-    armoniaActiva: null,
-    nombreArpegioActivo: null,
+    selectedArpeggioTone: null,
+    selectedArpeggioType: null,
+    activeArpeggios: [],
+    activeHarmony: null,
+    activeArpeggioName: null,
   },
   reducers: {
-    setTonoArpegioSeleccionado: (state, action) => {
-      state.tonoArpegioSeleccionado = action.payload;
+    setSelectedArpeggioTone: (state, action) => {
+      state.selectedArpeggioTone = action.payload;
     },
-    setTipoArpegioSeleccionado: (state, action) => {
-      state.tipoArpegioSeleccionado = action.payload;
+    setSelectedArpeggioType: (state, action) => {
+      state.selectedArpeggioType = action.payload;
     },
-    addArpegioActivo: (state, action) => {     
-      state.arpegiosActivos.push(action.payload)
+    addActiveArpeggio: (state, action) => {     
+      state.activeArpeggios.push(action.payload)
     },
-    removeArpegioActivo: (state) => {
-      state.arpegiosActivos.pop();
+    removeActiveArpeggio: (state) => {
+      state.activeArpeggios.pop();
     },
-    trasposeArpegiosActivos: (state, action) => {
-      state.arpegiosActivos = action.payload;
+    removeArpeggioAtIndex: (state, action) => {
+      state.activeArpeggios.splice(action.payload, 1);
     },
-    setArmoniaActiva: (state, action) => {
-      state.armoniaActiva = action.payload;
+    transposeActiveArpeggios: (state, action) => {
+      state.activeArpeggios = action.payload;
     },
-    setNombreArpegioActivo: (state, action) => {
-      state.nombreArpegioActivo = action.payload;
+    setActiveHarmony: (state, action) => {
+      state.activeHarmony = action.payload;
+    },
+    setActiveArpeggioName: (state, action) => {
+      state.activeArpeggioName = action.payload;
     },
     resetState: () => ({
-      tonoArpegioSeleccionado: null,
-      tipoArpegioSeleccionado: null,
-      arpegiosActivos: [],
-      armoniaActiva: null,
-      nombreArpegioActivo: null,
+      selectedArpeggioTone: null,
+      selectedArpeggioType: null,
+      activeArpeggios: [],
+      activeHarmony: null,
+      activeArpeggioName: null,
     }),
   },
 });
 
 export const {
-  setTonoArpegioSeleccionado,
-  setTipoArpegioSeleccionado,
-  addArpegioActivo,
-  removeArpegioActivo,
-  trasposeArpegiosActivos,
-  setArmoniaActiva,
-  setNombreArpegioActivo,
+  setSelectedArpeggioTone,
+  setSelectedArpeggioType,
+  addActiveArpeggio,
+  removeActiveArpeggio,
+  removeArpeggioAtIndex,
+  transposeActiveArpeggios,
+  setActiveHarmony,
+  setActiveArpeggioName,
   resetState,
 } = mainSlice.actions;
 
@@ -56,12 +60,15 @@ export const {
 const saveStateToLocalStorage = (storeAPI) => (next) => (action) => {
   const result = next(action);
   const state = storeAPI.getState();
-  localStorage.setItem('reduxState', JSON.stringify(state));
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('reduxState', JSON.stringify(state));
+  }
   return result;
 };
 
 // Load state from localStorage
 const loadStateFromLocalStorage = () => {
+  if (typeof window === 'undefined') return undefined;
   try {
     const serializedState = localStorage.getItem('reduxState');
     if (serializedState === null) {
@@ -83,7 +90,9 @@ export const store = configureStore({
   },
   preloadedState,
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(saveStateToLocalStorage),
+    getDefaultMiddleware({
+        serializableCheck: false // Necessary for complex musical objects
+    }).concat(saveStateToLocalStorage),
 });
 
 export default store;

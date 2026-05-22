@@ -1,38 +1,49 @@
-import React, { Component } from 'react';
+import React from 'react';
 import PropTypes from 'prop-types'
 import Celda from './celda'
-import ArmonicaDiatonica from '/TeoriaMusical/armonicaDiatonica';  // Adjust the path as needed
-import ArmonicaCromatica from '/TeoriaMusical/armonicaCromatica';  // Adjust the path as needed
+import DiatonicHarmonica from '/TeoriaMusical/diatonicHarmonica';
+import ChromaticHarmonica from '/TeoriaMusical/chromaticHarmonica';
 
-export default class Celdas extends Component {   
-    constructor(props) {
-        super(props);       
-      } 
-      render() {
+const Celdas = ({ armonica, tonalityActive, tuningNote, harmony }) => {
+    return (
+        <div id="table">
+            {
+                armonica.cells.map((cell, index) => {
+                    let active = false;
+                    let cellDegree = tonalityActive.tonality[cell.harmonyDegree];
+                    let cellNote = cellDegree ? cellDegree.code : cell.harmonyDegree;
+                    // Check note and octave if available
+                    let tuning = (tuningNote.note === cellNote && (tuningNote.octave === null || tuningNote.octave === cell.octave)) 
+                        ? tuningNote.detuning : null;
+                    let activeHarmony = harmony ? harmony.filter(note => note.code === cellNote) : null;
+                    
+                    if (activeHarmony && activeHarmony[0]) {
+                        cellNote = activeHarmony[0].name + "/" + activeHarmony[0].code;
+                        active = true;
+                    }
+                    
+                    return (
+                        <Celda 
+                            key={`${cell.hole}-${cell.noteType}-${index}`}
+                            activa={active} 
+                            afinacion={tuning} 
+                            tipoNota={cell.noteType} 
+                            agujero={cell.hole} 
+                            grado={cell.harmonyDegree} 
+                            nota={cellNote} 
+                        />
+                    );
+                })
+            }
+        </div>
+    );
+};
 
-         // Set margin based on the harmonica type
-         const marginStyle = this.props.armonica instanceof ArmonicaDiatonica
-         ? { marginTop: '0px' }
-         : { marginTop: '74px' };  // Or any other value for different harmonica types
-        
-        return (           
-          <div id="table" style={marginStyle} >
-            {   
-              this.props.armonica.celdas.map( celda => {
-                let activa = false;
-                let gradoCelda = this.props.tonalidadActiva.tonalidad[celda.gradoArmonia];   
-                let notaCelda = gradoCelda ? gradoCelda.code : celda.gradoArmonia;   
-                let afinacion = this.props.notaAfinar.nota == notaCelda ?  this.props.notaAfinar.desafinacion : null;
-                let armoniaActiva = this.props.armonia ? this.props.armonia.filter( nota => { return nota.code == notaCelda}) : null;   
-                if(armoniaActiva && armoniaActiva[0]){
-                    notaCelda = armoniaActiva[0].name + "/" + armoniaActiva[0].code; 
-                    activa = true;                 
-                  }
-                return <Celda activa={activa} afinacion={afinacion} tipoNota={celda.tipoNota} agujero={celda.agujero} grado={celda.gradoArmonia} nota={notaCelda}></Celda>
-              })         
-            }     
-          </div>      
-      );
-    }
-}
+Celdas.propTypes = {
+    armonica: PropTypes.object.isRequired,
+    tonalityActive: PropTypes.object.isRequired,
+    tuningNote: PropTypes.object,
+    harmony: PropTypes.array
+};
 
+export default Celdas;

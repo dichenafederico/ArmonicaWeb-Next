@@ -4,15 +4,15 @@ import { Container, Row, Col } from "react-bootstrap";
 export default class Footer extends Component {
   render() {
     return (
-      <footer>
-        <Row>
-        <Col md={5}>
+      <footer className="custom-footer">
+        <Row className="align-items-center">
+        <Col md={6}>
         <div className="developedBy">
           <label>Developed by Federico Di Chena - Programmer & Armonicist</label>
         </div>
         </Col>
-        <Col md={4}>
-        <div class="social-media-links">
+        <Col md={6}>
+        <div className="social-media-links">
           <ul>
             <li>
               {/* <!-- twitter --> */}
@@ -112,6 +112,51 @@ export default class Footer extends Component {
         </div>
         </Col>
         </Row>
+        <style jsx>{`
+          .custom-footer {
+            background-color: #333;
+            color: white;
+            padding: 10px 0;
+            width: 100%;
+            font-size: 0.9rem;
+          }
+          .developedBy {
+            text-align: center;
+            margin-bottom: 5px;
+          }
+          .social-media-links ul {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0;
+            margin: 0;
+            list-style: none;
+          }
+          .social-media-links li {
+            margin: 0 10px;
+          }
+          .social-media-links svg {
+            width: 24px;
+            height: 24px;
+            fill: white;
+            transition: fill 0.3s;
+          }
+          .social-media-links svg:hover {
+            fill: #de6b62;
+          }
+          @media (min-width: 768px) {
+            .custom-footer {
+              padding: 5px 20px;
+            }
+            .developedBy {
+              text-align: left;
+              margin-bottom: 0;
+            }
+            .social-media-links ul {
+              justify-content: flex-end;
+            }
+          }
+        `}</style>
       </footer>
     );
   }
