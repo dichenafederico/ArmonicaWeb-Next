@@ -1,28 +1,57 @@
-import { Component } from 'react'
-import ArpegioActivo from './arpegioActivo'
+import React from 'react';
+import ArpeggioActive from './arpeggioActive';
 import ButtonGroup from '@mui/material/ButtonGroup';
+import { useSelector, useDispatch } from 'react-redux';
+import { removeArpeggioAtIndex } from '../../Store/store';
 
-export default class ArpegiosActivosContenedor extends Component {  
+const ArpeggiosActiveContainer = ({ orientation, onArpegioActivoClick }) => {
+    const dispatch = useDispatch();
+    const activeArpeggios = useSelector((state) => state.main.activeArpeggios);
 
-    constructor(props) {
-        super(props);    
-      }
-   
-    render() {              
-        if (this.props.arpegiosActivos != null && this.props.arpegiosActivos.length > 0) {
-            return (
-                <div style={{display:"contents"}}> 
-                    <ButtonGroup  orientation={this.props.orientation} variant="contained" color="primary" aria-label="contained primary button group">
-                    { this.props.arpegiosActivos.map( arpegio => {
-                        return([                            
-                            <ArpegioActivo nombreArpegio={arpegio.nombre} value={arpegio} armoniaArpegio={arpegio.arpegio} onClick={this.props.onArpegioActivoClick} ></ArpegioActivo>
-                          ]);                            
-                    })   
-                    }
-                    </ButtonGroup>
+    if (activeArpeggios && activeArpeggios.length > 0) {
+        return (
+            <div className="arpeggio-grid-container">
+                <div className="arpeggio-grid">
+                    {activeArpeggios.map((arpeggio, index) => (
+                        <div key={`${arpeggio.name}-${index}`} className="arpeggio-grid-item">
+                            <ArpeggioActive 
+                                nombreArpegio={arpeggio.name} 
+                                value={arpeggio} 
+                                armoniaArpegio={arpeggio.arpegio} 
+                                onClick={onArpegioActivoClick} 
+                                onDelete={() => dispatch(removeArpeggioAtIndex(index))}
+                            />
+                        </div>
+                    ))}
                 </div>
-            )
-        }
-        return (null);        
+                <style jsx>{`
+                    .arpeggio-grid-container {
+                        margin-top: 15px;
+                        width: 100%;
+                    }
+                    .arpeggio-grid {
+                        display: grid;
+                        grid-template-columns: repeat(4, 1fr);
+                        gap: 0px;
+                        justify-items: stretch;
+                        border: 1px solid #ddd;
+                    }
+                    .arpeggio-grid-item {
+                        display: flex;
+                        justify-content: stretch;
+                        border: 1px solid #eee;
+                    }
+                    @media (max-width: 600px) {
+                        .arpeggio-grid {
+                            grid-template-columns: repeat(2, 1fr);
+                        }
+                    }
+                `}</style>
+            </div>
+        );
     }
-}
+    return null;
+};
+
+export const ArpegiosActivosContenedorGral = ArpeggiosActiveContainer;
+export default ArpeggiosActiveContainer;
