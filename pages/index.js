@@ -6,11 +6,11 @@ import HarmonicaTonalityList from "../components/HarmonicaList/harmonicaTonality
 import PositionList from "../components/PositionList/positionList";
 import Celdas from "../components/CeldasArmonica/celdas";
 import ActiveHarmonica from "../components/ArmonicaActiva/activeHarmonica";
-import DiatonicHarmonica from "/TeoriaMusical/diatonicHarmonica";
-import ChromaticHarmonica from "/TeoriaMusical/chromaticHarmonica";
-import * as MusicTheory from "/TeoriaMusical/musicTheory";
-import Tonality from "/TeoriaMusical/tonality";
-import Arpeggio from "/TeoriaMusical/arpeggio";
+import DiatonicHarmonica from "../TeoriaMusical/diatonicHarmonica";
+import ChromaticHarmonica from "../TeoriaMusical/chromaticHarmonica";
+import * as MusicTheory from "../TeoriaMusical/musicTheory";
+import Tonality from "../TeoriaMusical/tonality";
+import Arpeggio from "../TeoriaMusical/arpeggio";
 import ScaleList from "../components/ScaleList/scaleList";
 import GreekModeList from "../components/GreekModeList/greekModeList";
 import ArpeggioTypeList from "../components/VisualizacionArpegios/arpeggioTypeList";

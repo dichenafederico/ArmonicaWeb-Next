@@ -7,10 +7,11 @@ import MusicNoteIcon from "@mui/icons-material/MusicNote";
 import IconButton from "@mui/material/IconButton";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import StopIcon from "@mui/icons-material/Stop";
-import iconoMetronomo from "../../public/iconos/metronome.svg";
 
-import click1 from "../../public/sonidos/click1.wav";
-import click2 from "../../public/sonidos/click2.wav";
+const prefix = "/ArmonicaWeb-Next";
+const iconoMetronomo = `${prefix}/iconos/metronome.svg`;
+const click1 = `${prefix}/sonidos/click1.wav`;
+const click2 = `${prefix}/sonidos/click2.wav`;
 
 const Metronomo = ({ cambioArpegio }) => {
   const [isPlaying, setIsPlaying] = useState(false);

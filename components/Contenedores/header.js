@@ -5,7 +5,9 @@ import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
 import MenuIcon from '@mui/icons-material/Menu';
-import logoArmonica from '../../public/iconos/harmonicaTierna.svg'
+
+const prefix = "/ArmonicaWeb-Next";
+const logoArmonica = `${prefix}/iconos/harmonicaTierna.svg`;
 
 // const useStyles = makeStyles((theme) => ({
 //   root: {
