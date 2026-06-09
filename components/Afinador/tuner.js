@@ -16,6 +16,18 @@ const Tuner = ({ handlerAudioNote }) => {
   const analyserRef = useRef(null);
   const bufRef = useRef(new Float32Array(BUFLEN));
   const rafIdRef = useRef(null);
+  const rawStreamRef = useRef(null);
+
+  const microphoneActiveRef = useRef(microphoneActive);
+  const handlerAudioNoteRef = useRef(handlerAudioNote);
+
+  useEffect(() => {
+    microphoneActiveRef.current = microphoneActive;
+  }, [microphoneActive]);
+
+  useEffect(() => {
+    handlerAudioNoteRef.current = handlerAudioNote;
+  }, [handlerAudioNote]);
 
   const autoCorrelate = (buf, sampleRate) => {
     const SIZE = buf.length;
@@ -88,19 +100,20 @@ const Tuner = ({ handlerAudioNote }) => {
       const octave = Math.floor(midiNote / 12) - 1;
       const detune = centsOffFromPitch(pitch, midiNote);
 
-      if (microphoneActive) {
-        handlerAudioNote(noteName, detune, octave);
+      if (microphoneActiveRef.current) {
+        handlerAudioNoteRef.current(noteName, detune, octave);
       } else {
-        handlerAudioNote(null, 0, null);
+        handlerAudioNoteRef.current(null, 0, null);
       }
     } else {
-      handlerAudioNote(null, 0, null);
+      handlerAudioNoteRef.current(null, 0, null);
     }
 
     rafIdRef.current = requestAnimationFrame(updatePitch);
-  }, [microphoneActive, handlerAudioNote]);
+  }, []);
 
   const gotStream = useCallback((stream) => {
+    rawStreamRef.current = stream;
     // Use Tone.js context if available, otherwise create one
     if (!audioContextRef.current) {
         audioContextRef.current = Tone.getContext().rawContext;
@@ -128,6 +141,9 @@ const Tuner = ({ handlerAudioNote }) => {
     return () => {
       if (rafIdRef.current) {
         cancelAnimationFrame(rafIdRef.current);
+      }
+      if (rawStreamRef.current) {
+        rawStreamRef.current.getTracks().forEach((track) => track.stop());
       }
     };
   }, [gotStream]);

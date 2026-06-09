@@ -17,16 +17,19 @@ const mainSlice = createSlice({
       state.selectedArpeggioType = action.payload;
     },
     addActiveArpeggio: (state, action) => {     
-      state.activeArpeggios.push(action.payload)
+      if (!state.activeArpeggios) state.activeArpeggios = [];
+      state.activeArpeggios.push(action.payload);
     },
     removeActiveArpeggio: (state) => {
+      if (!state.activeArpeggios) state.activeArpeggios = [];
       state.activeArpeggios.pop();
     },
     removeArpeggioAtIndex: (state, action) => {
+      if (!state.activeArpeggios) state.activeArpeggios = [];
       state.activeArpeggios.splice(action.payload, 1);
     },
     transposeActiveArpeggios: (state, action) => {
-      state.activeArpeggios = action.payload;
+      state.activeArpeggios = action.payload || [];
     },
     setActiveHarmony: (state, action) => {
       state.activeHarmony = action.payload;
@@ -74,7 +77,11 @@ const loadStateFromLocalStorage = () => {
     if (serializedState === null) {
       return undefined;
     }
-    return JSON.parse(serializedState);
+    const state = JSON.parse(serializedState);
+    if (state && state.main && !state.main.activeArpeggios) {
+      state.main.activeArpeggios = [];
+    }
+    return state;
   } catch (e) {
     console.warn('Could not load state from localStorage', e);
     return undefined;

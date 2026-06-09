@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import dynamic from "next/dynamic";
 import Header from "../components/Contenedores/header";
 import Footer from "../components/Contenedores/footer";
@@ -28,8 +28,11 @@ import FilterListIcon from '@mui/icons-material/FilterList';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import { Row, Col, Container } from "react-bootstrap";
-import { Tooltip, Select, MenuItem, Collapse, Button, Badge } from "@mui/material";
+import { Tooltip, Select, MenuItem, Collapse, Button, Badge, Switch, Slider } from "@mui/material";
 import * as Tone from 'tone';
+import VolumeUpIcon from '@mui/icons-material/VolumeUp';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import StopIcon from '@mui/icons-material/Stop';
 
 const Tuner = dynamic(() => import("../components/Afinador/tuner"), {
   ssr: false,
@@ -37,7 +40,7 @@ const Tuner = dynamic(() => import("../components/Afinador/tuner"), {
 
 const App = () => {
   const dispatch = useDispatch();
-  const activeArpeggios = useSelector((state) => state.main.activeArpeggios);
+  const activeArpeggios = useSelector((state) => state.main?.activeArpeggios) || [];
 
   const [showFilters, setShowFilters] = useState(false);
   const [activeTonality, setActiveTonality] = useState(MusicTheory.activeHarmonicaTonality);
@@ -59,16 +62,253 @@ const App = () => {
   const [activeArpeggioName, setActiveArpeggioName] = useState("");
   const [tuningNote, setTuningNote] = useState({});
   const [isClient, setIsClient] = useState(false);
+  const [bpm, setBpm] = useState(120);
+  const [playChordAudio, setPlayChordAudio] = useState(true);
+  const [synthType, setSynthType] = useState("triangle");
+  const [volume, setVolume] = useState(-12);
+  const [isPlayingChords, setIsPlayingChords] = useState(false);
+  
+  // Audio configuration and rhythmic style states
+  const [showAudioSettings, setShowAudioSettings] = useState(false);
+  const [rhythmStyle, setRhythmStyle] = useState("pad");
+  const [instrument, setInstrument] = useState("synth");
+
+  const [isPlayingMetronome, setIsPlayingMetronome] = useState(false);
+  const metronomeClick1Ref = useRef(null);
+  const metronomeClick2Ref = useRef(null);
+
+  const synthRef = useRef(null);
+  const samplerRef = useRef(null);
+  const playbackIntervalRef = useRef(null);
+  const beatIndexRef = useRef(0);
 
   useEffect(() => {
     setIsClient(true);
+    if (typeof window !== "undefined") {
+      synthRef.current = new Tone.PolySynth(Tone.Synth, {
+        oscillator: { type: "triangle" },
+        envelope: { attack: 0.1, decay: 0.2, sustain: 0.8, release: 0.8 }
+      }).toDestination();
+      synthRef.current.volume.value = -12;
+
+      metronomeClick1Ref.current = new Audio("/ArmonicaWeb-Next/sonidos/click1.wav");
+      metronomeClick2Ref.current = new Audio("/ArmonicaWeb-Next/sonidos/click2.wav");
+    }
+    return () => {
+      if (synthRef.current) synthRef.current.dispose();
+      if (samplerRef.current) samplerRef.current.dispose();
+    };
   }, []);
 
-  const playArpeggioAsChord = (arpeggio, instrumentName = 'acoustic_grand_piano', duration = '1n', repeatCount = 4) => {
-    const synth = new Tone.PolySynth().toDestination();
-    const now = Tone.now();
-    for (let i = 0; i < repeatCount; i++) {
-      synth.triggerAttackRelease(arpeggio.getNotes(), duration, now + i * Tone.Time(duration).toSeconds());
+  useEffect(() => {
+    if (synthRef.current) {
+      synthRef.current.set({
+        oscillator: { type: synthType }
+      });
+    }
+  }, [synthType]);
+
+  useEffect(() => {
+    if (synthRef.current) {
+      synthRef.current.volume.value = volume;
+    }
+    if (samplerRef.current) {
+      samplerRef.current.volume.value = volume;
+    }
+  }, [volume]);
+
+  // Dynamically load grand piano samples when "piano" is selected
+  useEffect(() => {
+    if (instrument === "piano" && !samplerRef.current && typeof window !== "undefined") {
+      samplerRef.current = new Tone.Sampler({
+        urls: {
+          C3: "C3.mp3",
+          A3: "A3.mp3",
+          C4: "C4.mp3",
+          A4: "A4.mp3"
+        },
+        baseUrl: "https://tonejs.github.io/audio/salamander/",
+        onload: () => {
+          console.log("Lightweight piano samples loaded!");
+        }
+      }).toDestination();
+      samplerRef.current.volume.value = volume;
+    }
+  }, [instrument, volume]);
+
+  const playChordSound = useCallback((arpeggioObj) => {
+    if (!arpeggioObj) return;
+    
+    if (Tone.context.state !== 'running') {
+      Tone.start();
+    }
+    
+    let notes = [];
+    if (typeof arpeggioObj.getNotes === 'function') {
+      notes = arpeggioObj.getNotes();
+    } else if (Array.isArray(arpeggioObj.arpeggio)) {
+      notes = arpeggioObj.arpeggio.map(n => typeof n === 'string' ? n : (n.code || n.name));
+    } else if (Array.isArray(arpeggioObj.arpegio)) {
+      notes = arpeggioObj.arpegio.map(n => typeof n === 'string' ? n : (n.code || n.name));
+    }
+    
+    if (notes.length === 0) return;
+    
+    const playSource = (instrument === "piano" && samplerRef.current && samplerRef.current.loaded) 
+      ? samplerRef.current 
+      : synthRef.current;
+      
+    if (!playSource) return;
+
+    // Voicing: root note in octave 3, others in octave 4.
+    const chordNotes = notes.map((note, index) => {
+      const octave = index === 0 ? '3' : '4';
+      return `${note}${octave}`;
+    });
+    
+    try {
+      playSource.triggerAttackRelease(chordNotes, "2n");
+    } catch (e) {
+      console.error("Error playing chord sound:", e);
+    }
+  }, [instrument]);
+
+  const isPlayingAny = isPlayingChords || isPlayingMetronome;
+  const prevIsPlayingAnyRef = useRef(false);
+
+  useEffect(() => {
+    if (isPlayingAny) {
+      if (playbackIntervalRef.current) {
+        clearInterval(playbackIntervalRef.current);
+      }
+      
+      const wasAlreadyPlaying = prevIsPlayingAnyRef.current;
+      if (!wasAlreadyPlaying) {
+        beatIndexRef.current = 0;
+        prevIsPlayingAnyRef.current = true;
+      }
+      
+      const speedMs = (60 / bpm) * 1000;
+      let currentChordIndex = reproducingArpeggio >= activeArpeggios.length ? 0 : reproducingArpeggio;
+      
+      const tick = () => {
+        const beat = beatIndexRef.current;
+        
+        // 1. Play metronome click if enabled
+        if (isPlayingMetronome) {
+          if (beat === 0) {
+            if (metronomeClick2Ref.current) {
+              metronomeClick2Ref.current.currentTime = 0;
+              metronomeClick2Ref.current.play().catch(e => console.warn("Metronome click 2 error:", e));
+            }
+          } else {
+            if (metronomeClick1Ref.current) {
+              metronomeClick1Ref.current.currentTime = 0;
+              metronomeClick1Ref.current.play().catch(e => console.warn("Metronome click 1 error:", e));
+            }
+          }
+        }
+
+        // 2. Sync UI visuals at the start of beat 0 (perfect alignment with audio trigger)
+        if (beat === 0 && activeArpeggios.length > 0) {
+          const activeChord = activeArpeggios[currentChordIndex];
+          if (activeChord) {
+            setActiveHarmony(activeChord.arpeggio || activeChord.arpegio);
+            setActiveArpeggioName(activeChord.name || activeChord.nombre);
+          }
+        }
+
+        // 3. Play chord audio if enabled
+        if (isPlayingChords && activeArpeggios.length > 0) {
+          const activeChord = activeArpeggios[currentChordIndex];
+          if (activeChord) {
+            let notes = [];
+            if (typeof activeChord.getNotes === 'function') {
+              notes = activeChord.getNotes();
+            } else if (Array.isArray(activeChord.arpeggio)) {
+              notes = activeChord.arpeggio.map(n => typeof n === 'string' ? n : (n.code || n.name));
+            } else if (Array.isArray(activeChord.arpegio)) {
+              notes = activeChord.arpegio.map(n => typeof n === 'string' ? n : (n.code || n.name));
+            }
+            
+            const playSource = (instrument === "piano" && samplerRef.current && samplerRef.current.loaded) 
+              ? samplerRef.current 
+              : synthRef.current;
+              
+            if (notes.length > 0 && playChordAudio && playSource) {
+              if (rhythmStyle === "pad") {
+                if (beat === 0) {
+                  const chordNotes = notes.map((note, idx) => `${note}${idx === 0 ? '3' : '4'}`);
+                  playSource.triggerAttackRelease(chordNotes, "1n");
+                }
+              } else if (rhythmStyle === "pulse") {
+                const chordNotes = notes.map((note, idx) => `${note}${idx === 0 ? '3' : '4'}`);
+                playSource.triggerAttackRelease(chordNotes, "4n");
+              } else if (rhythmStyle === "arpeggio") {
+                const noteIndex = beat % notes.length;
+                const octave = noteIndex === 0 ? '3' : '4';
+                playSource.triggerAttackRelease(`${notes[noteIndex]}${octave}`, "4n");
+              } else if (rhythmStyle === "pop") {
+                if (beat === 0) {
+                  playSource.triggerAttackRelease(`${notes[0]}3`, "4n");
+                } else {
+                  const chordNotes = notes.slice(1).map(note => `${note}4`);
+                  const notesToPlay = chordNotes.length > 0 ? chordNotes : [`${notes[0]}4`];
+                  playSource.triggerAttackRelease(notesToPlay, "4n");
+                }
+              }
+            }
+          }
+        }
+        
+        const nextBeat = (beat + 1) % 4;
+        beatIndexRef.current = nextBeat;
+        
+        // 4. Advance chord index at the end of beat 3, so next beat 0 tick handles the new chord
+        if (isPlayingChords && nextBeat === 0 && activeArpeggios.length > 0) {
+          currentChordIndex = currentChordIndex >= activeArpeggios.length - 1 ? 0 : currentChordIndex + 1;
+          setReproducingArpeggio(currentChordIndex);
+        }
+      };
+      
+      if (!wasAlreadyPlaying) {
+        tick();
+      }
+      playbackIntervalRef.current = setInterval(tick, speedMs);
+    } else {
+      prevIsPlayingAnyRef.current = false;
+      if (playbackIntervalRef.current) {
+        clearInterval(playbackIntervalRef.current);
+        playbackIntervalRef.current = null;
+      }
+    }
+    
+    return () => {
+      if (playbackIntervalRef.current) {
+        clearInterval(playbackIntervalRef.current);
+      }
+    };
+  }, [bpm, isPlayingAny, isPlayingMetronome, isPlayingChords, activeArpeggios, playChordAudio, rhythmStyle, instrument]);
+
+  const togglePlayMetronome = () => {
+    if (Tone.context.state !== 'running') {
+      Tone.start();
+    }
+    setIsPlayingMetronome(!isPlayingMetronome);
+  };
+
+  const togglePlayChords = () => {
+    if (isPlayingChords) {
+      setIsPlayingChords(false);
+    } else {
+      if (activeArpeggios.length === 0) return;
+      setIsPlayingChords(true);
+      if (Tone.context.state !== 'running') {
+        Tone.start();
+      }
+      const firstArpeggio = activeArpeggios[reproducingArpeggio >= activeArpeggios.length ? 0 : reproducingArpeggio];
+      setActiveHarmony(firstArpeggio.arpeggio || firstArpeggio.arpegio);
+      setActiveArpeggioName(firstArpeggio.name || firstArpeggio.nombre);
     }
   };
 
@@ -141,6 +381,9 @@ const App = () => {
   const handleArpeggioChange = (e) => {
     setActiveHarmony(e.arpeggio || e.arpegio); 
     setActiveArpeggioName(e.name || e.nombre);
+    if (playChordAudio) {
+      playChordSound(e);
+    }
   };
 
   const handleArpeggioTypeChange = (e) => {
@@ -182,17 +425,9 @@ const App = () => {
 
   const removeLastArpeggio = () => dispatch(removeActiveArpeggio());
 
-  const playNextActiveArpeggio = () => {
-    if (activeArpeggios.length > 1) {
-      let nextIndex = reproducingArpeggio >= activeArpeggios.length - 1 ? 0 : reproducingArpeggio + 1;
-      handleArpeggioChange(activeArpeggios[nextIndex]);
-      setReproducingArpeggio(nextIndex);
-    }
-  };
-
-  const getAudioNote = (note, detuning, octave) => {
+  const getAudioNote = useCallback((note, detuning, octave) => {
     setTuningNote({ note, detuning: 100 - detuning, octave });
-  };
+  }, []);
 
   return (
     <div className="App">
@@ -319,12 +554,133 @@ const App = () => {
              <div className="performance-sidebar">
                 <div className="top-side-row">
                   <div className="metronome-mini-card">
-                    <Metronomo cambioArpegio={playNextActiveArpeggio} />
+                    <Metronomo 
+                      bpm={bpm} 
+                      onBpmChange={setBpm} 
+                      isPlaying={isPlayingMetronome}
+                      onPlayToggle={togglePlayMetronome}
+                    />
                   </div>
                   <div className="active-chord-display">
                     <div className="mini-label">CURRENT</div>
                     <div className="current-chord-name">{activeArpeggioName || "-"}</div>
                   </div>
+                </div>
+
+                <div className="chord-audio-panel mt-3">
+                  <div 
+                    className="audio-panel-header" 
+                    onClick={() => setShowAudioSettings(!showAudioSettings)}
+                    style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', gap: '10px' }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
+                      <VolumeUpIcon className="panel-icon" sx={{ fontSize: '1.2rem', color: '#de6b62', marginRight: '6px' }} />
+                      <h6 style={{ margin: 0, fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase' }}>Chord Audio Settings</h6>
+                      {showAudioSettings ? <ExpandLessIcon sx={{ color: '#de6b62', marginLeft: '4px' }} /> : <ExpandMoreIcon sx={{ color: '#de6b62', marginLeft: '4px' }} />}
+                    </div>
+                    {isClient && (
+                      <Button
+                        variant="contained"
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          togglePlayChords();
+                        }}
+                        disabled={activeArpeggios.length === 0}
+                        startIcon={isPlayingChords ? <StopIcon /> : <PlayArrowIcon />}
+                        sx={{
+                          textTransform: 'none',
+                          borderRadius: '20px',
+                          fontWeight: 'bold',
+                          fontSize: '0.7rem',
+                          padding: '2px 10px',
+                          minWidth: '70px',
+                          height: '24px',
+                          backgroundColor: isPlayingChords ? '#e06055' : '#de6b62',
+                          '&:hover': {
+                            backgroundColor: isPlayingChords ? '#c74f45' : '#c95a51'
+                          }
+                        }}
+                      >
+                        {isPlayingChords ? "Stop" : "Play"}
+                      </Button>
+                    )}
+                  </div>
+                  
+                  <Collapse in={showAudioSettings}>
+                    <div className="audio-panel-body pt-2">
+                      <div className="control-row">
+                        <span className="control-label">Play Sound</span>
+                        <Switch 
+                          checked={playChordAudio} 
+                          onChange={(e) => setPlayChordAudio(e.target.checked)} 
+                          color="primary"
+                          size="small"
+                        />
+                      </div>
+                      
+                      <div className="control-row-vertical">
+                        <div className="slider-label-row">
+                          <span className="control-label">Volume</span>
+                          <span className="control-value">{Math.round((volume + 30) * 10 / 3)}%</span>
+                        </div>
+                        <Slider
+                          value={volume}
+                          min={-30}
+                          max={0}
+                          step={1}
+                          onChange={(e, val) => setVolume(val)}
+                          size="small"
+                          sx={{ color: '#de6b62' }}
+                        />
+                      </div>
+
+                      <div className="control-row">
+                        <span className="control-label">Instrument</span>
+                        <Select 
+                          value={instrument} 
+                          onChange={(e) => setInstrument(e.target.value)}
+                          size="small"
+                          sx={{ minWidth: 120, height: 30, fontSize: '0.8rem' }}
+                        >
+                          <MenuItem value="synth" style={{ fontSize: '0.8rem' }}>Synthesizer</MenuItem>
+                          <MenuItem value="piano" style={{ fontSize: '0.8rem' }}>Acoustic Piano</MenuItem>
+                        </Select>
+                      </div>
+
+                      {instrument === "synth" && (
+                        <div className="control-row">
+                          <span className="control-label">Synth Sound</span>
+                          <Select 
+                            value={synthType} 
+                            onChange={(e) => setSynthType(e.target.value)}
+                            size="small"
+                            sx={{ minWidth: 120, height: 30, fontSize: '0.8rem' }}
+                          >
+                            <MenuItem value="triangle" style={{ fontSize: '0.8rem' }}>Soft (Triangle)</MenuItem>
+                            <MenuItem value="sine" style={{ fontSize: '0.8rem' }}>Pure (Sine)</MenuItem>
+                            <MenuItem value="sawtooth" style={{ fontSize: '0.8rem' }}>Warm (Sawtooth)</MenuItem>
+                            <MenuItem value="square" style={{ fontSize: '0.8rem' }}>Bright (Square)</MenuItem>
+                          </Select>
+                        </div>
+                      )}
+
+                      <div className="control-row">
+                        <span className="control-label">Rhythm Style</span>
+                        <Select 
+                          value={rhythmStyle} 
+                          onChange={(e) => setRhythmStyle(e.target.value)}
+                          size="small"
+                          sx={{ minWidth: 120, height: 30, fontSize: '0.8rem' }}
+                        >
+                          <MenuItem value="pad" style={{ fontSize: '0.8rem' }}>Sustained (Pad)</MenuItem>
+                          <MenuItem value="pulse" style={{ fontSize: '0.8rem' }}>Pulsed (Pulse)</MenuItem>
+                          <MenuItem value="arpeggio" style={{ fontSize: '0.8rem' }}>Arpeggio</MenuItem>
+                          <MenuItem value="pop" style={{ fontSize: '0.8rem' }}>Pop Pattern</MenuItem>
+                        </Select>
+                      </div>
+                    </div>
+                  </Collapse>
                 </div>
 
                 <div className="musical-base-wrapper mt-3">
@@ -354,16 +710,27 @@ const App = () => {
 
       <style jsx global>{`
         $primary-color: #de6b62;
-        #root { overflow: hidden; }
+        html,
+        body,
+        #__next {
+          margin: 0;
+          padding: 0;
+          height: 100%;
+          min-height: 100vh;
+        }
         .App {
           text-align: center;
-          background-image: url(./iconos/light-grey-terrazzo.png);
+          background-image: url(/ArmonicaWeb-Next/iconos/light-grey-terrazzo.png);
           min-height: 100vh;
+          display: flex;
+          flex-direction: column;
         }
         .main-layout {
           padding: 10px;
           max-width: 1700px;
           margin: 0 auto;
+          flex-grow: 1;
+          width: 100%;
         }
         .top-action-bar {
           display: flex;
@@ -371,7 +738,6 @@ const App = () => {
           background: #fff;
           padding: 5px 15px;
           border-radius: 8px;
-          box-shadow: 0 2px 10px rgba(0,0,0,0.05);
           margin-bottom: 10px;
           gap: 15px;
         }
@@ -396,7 +762,6 @@ const App = () => {
           background: #fff;
           padding: 12px;
           border-radius: 10px;
-          box-shadow: 0 4px 15px rgba(0,0,0,0.1);
           margin-bottom: 12px;
           border: 1px solid #de6b62;
         }
@@ -427,13 +792,12 @@ const App = () => {
         .harmonica-container-fixed {          
           padding: 0;
           border-radius: 15px;
-          box-shadow: 0 5px 25px rgba(0,0,0,0.05);
           height: 590px;
           position: relative;
           overflow: hidden;
         }
         .imagenArmonica {
-          background-image: url(./iconos/harmonicaBack.png);
+          background-image: url(/ArmonicaWeb-Next/iconos/harmonicaBack.png);
           background-size: 70rem;
           background-attachment: initial;
           background-repeat: no-repeat;
@@ -455,7 +819,7 @@ const App = () => {
         }
         .performance-sidebar { display: flex; flex-direction: column; gap: 10px; }
         .top-side-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .metronome-wrapper { background: #fff; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .metronome-wrapper { background: #fff; border-radius: 12px; }
         .active-chord-display {
           background: transparent;
           color: #de6b62;
@@ -465,11 +829,57 @@ const App = () => {
           align-items: center;
         }
         .current-chord-name { font-size: 3.5rem; font-weight: 900; margin: 0; }
+        .chord-audio-panel {
+          background: #fff;
+          padding: 12px;
+          border-radius: 12px;
+          border: 2px solid #de6b62;
+          text-align: left;
+        }
+        .audio-panel-header {
+          display: flex;
+          align-items: center;
+          margin-bottom: 12px;
+          border-bottom: 1px solid #f0f0f0;
+          padding-bottom: 6px;
+          color: #de6b62;
+        }
+        .audio-panel-header h6 {
+          margin: 0;
+          font-weight: 800;
+          font-size: 0.8rem;
+          text-transform: uppercase;
+        }
+        .control-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 8px;
+        }
+        .control-row-vertical {
+          display: flex;
+          flex-direction: column;
+          margin-bottom: 8px;
+        }
+        .slider-label-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 4px;
+        }
+        .control-label {
+          font-size: 0.75rem;
+          color: #666;
+          font-weight: 600;
+        }
+        .control-value {
+          font-size: 0.7rem;
+          color: #999;
+        }
         .musical-base-wrapper {
           background: #fff;
           padding: 12px;
           border-radius: 12px;
-          box-shadow: 0 4px 15px rgba(0,0,0,0.05);
           border: 2px solid #de6b62;
           text-align: center;
         }
