@@ -149,6 +149,10 @@ const Metronomo = ({ cambioArpegio }) => {
       color: #fff;
       font-size: 18px;
     } 
+    
+    .metronome button svg {
+      pointer-events: none;
+    }
     `}</style>
 
     </div>   
