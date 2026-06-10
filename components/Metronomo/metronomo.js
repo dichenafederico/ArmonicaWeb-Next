@@ -13,9 +13,13 @@ const iconoMetronomo = `${prefix}/iconos/metronome.svg`;
 const click1 = `${prefix}/sonidos/click1.wav`;
 const click2 = `${prefix}/sonidos/click2.wav`;
 
-const Metronomo = ({ cambioArpegio }) => {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [bpm, setBpm] = useState(120);
+const Metronomo = ({ cambioArpegio, isPlaying: externalIsPlaying, onPlayToggle, bpm: externalBpm, onBpmChange }) => {
+  const [internalIsPlaying, setInternalIsPlaying] = useState(false);
+  const [internalBpm, setInternalBpm] = useState(120);
+  
+  const isPlaying = externalIsPlaying !== undefined ? externalIsPlaying : internalIsPlaying;
+  const bpm = externalBpm !== undefined ? externalBpm : internalBpm;
+
   const [currentBeat, setCurrentBeat] = useState(0)
   const latestCurrentBeat = useRef(currentBeat);
   const [currentMeasure, setCurrentMeasure] = useState(0);
@@ -47,13 +51,23 @@ const Metronomo = ({ cambioArpegio }) => {
     cambioArpegioRef.current = cambioArpegio;
   }, [cambioArpegio]);
 
-  const startMetronome = () => {
-    if (!isPlaying) {
-      setIsPlaying(true); 
+  // Sync internal state if external starts
+  useEffect(() => {
+    if (externalIsPlaying === true && !internalIsPlaying) {
+      startMetronome(true);
+    } else if (externalIsPlaying === false && internalIsPlaying) {
+      stopMetronome(true);
+    }
+  }, [externalIsPlaying]);
+
+  const startMetronome = (fromExternal = false) => {
+    if (!internalIsPlaying) {
+      setInternalIsPlaying(true); 
       setCurrentBeat(0);     
       setCurrentMeasure(0);
       latestCurrentMeasure.current = 0;
       intervalRef.current = setInterval(playAudio, (60 / bpm) * 1000);
+      if (!fromExternal && onPlayToggle) onPlayToggle();
     }
   };
 
@@ -63,14 +77,15 @@ const Metronomo = ({ cambioArpegio }) => {
 
   function Estado() {
     if (isPlaying) {
-      return <StopIcon />;
+      return <StopIcon style={{ pointerEvents: 'none' }} />;
     }
-    return <PlayArrowIcon />;
+    return <PlayArrowIcon style={{ pointerEvents: 'none' }} />;
   }
 
-  const stopMetronome = () => {
-    setIsPlaying(false);
+  const stopMetronome = (fromExternal = false) => {
+    setInternalIsPlaying(false);
     clearInterval(intervalRef.current);
+    if (!fromExternal && onPlayToggle) onPlayToggle();
   };
 
   const playAudio = () => {       
@@ -94,8 +109,9 @@ const Metronomo = ({ cambioArpegio }) => {
     };
 
   const handleBpmChange = (e) => {
-    setBpm(e.target.value);
-    if (isPlaying) {
+    setInternalBpm(e.target.value);
+    if (onBpmChange) onBpmChange(e.target.value);
+    if (internalIsPlaying) {
       clearInterval(intervalRef.current);
       intervalRef.current = setInterval(playAudio, (60 / e.target.value) * 1000);      
     }
@@ -121,7 +137,7 @@ const Metronomo = ({ cambioArpegio }) => {
       <IconButton
         color="primary"
         aria-label="add to shopping cart"
-        onClick={isPlaying ? stopMetronome : startMetronome}
+        onClick={() => isPlaying ? stopMetronome(false) : startMetronome(false)}
       >
         <Estado />
       </IconButton>
