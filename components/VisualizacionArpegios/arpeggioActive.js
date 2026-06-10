@@ -5,9 +5,9 @@ import IconButton from '@mui/material/IconButton';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { Tooltip } from '@mui/material';
 
-const ArpeggioActive = ({ armoniaArpegio, onClick, value, nombreArpegio, onDelete }) => {
+const ArpeggioActive = ({ armoniaArpegio, onClick, value, nombreArpegio, onDelete, isPlaying }) => {
     return (
-        <div className="arpeggio-active-container">
+        <div className={`arpeggio-active-container ${isPlaying ? 'playing-highlight' : ''}`}>
             <Button 
                 value={armoniaArpegio} 
                 onClick={() => onClick(value)} 
@@ -52,6 +52,11 @@ const ArpeggioActive = ({ armoniaArpegio, onClick, value, nombreArpegio, onDelet
                 }
                 .arpeggio-active-container:hover .delete-overlay {
                     opacity: 1;
+                }
+                .playing-highlight {
+                    background-color: rgba(222, 107, 98, 0.15);
+                    box-shadow: inset 0 0 0 2px #de6b62;
+                    border-radius: 4px;
                 }
             `}</style>
         </div>

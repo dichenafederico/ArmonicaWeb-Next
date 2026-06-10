@@ -4,7 +4,7 @@ import ButtonGroup from '@mui/material/ButtonGroup';
 import { useSelector, useDispatch } from 'react-redux';
 import { removeArpeggioAtIndex } from '../../Store/store';
 
-const ArpeggiosActiveContainer = ({ orientation, onArpegioActivoClick }) => {
+const ArpeggiosActiveContainer = ({ orientation, onArpegioActivoClick, currentlyPlayingIndex = -1 }) => {
     const dispatch = useDispatch();
     const activeArpeggios = useSelector((state) => state.main.activeArpeggios);
 
@@ -20,6 +20,7 @@ const ArpeggiosActiveContainer = ({ orientation, onArpegioActivoClick }) => {
                                 armoniaArpegio={arpeggio.arpegio} 
                                 onClick={onArpegioActivoClick} 
                                 onDelete={() => dispatch(removeArpeggioAtIndex(index))}
+                                isPlaying={index === currentlyPlayingIndex}
                             />
                         </div>
                     ))}
