@@ -13,8 +13,8 @@ const Celdas = ({ armonica, tonalityActive, tuningNote, harmony }) => {
                     let cellDegree = tonalityActive.tonality[cell.harmonyDegree];
                     let cellCode = cellDegree ? cellDegree.code : null;
                     let cellNote = cellDegree ? (cellDegree.displayName || cellDegree.code) : cell.harmonyDegree;
-                    // Check note and octave if available (use internal code for tuner matching)
-                    let tuning = (tuningNote.note === cellCode && (tuningNote.octave === null || tuningNote.octave === cell.octave)) 
+                    // Check note and octave if available (use internal code for tuner matching, and ensure cellCode is not null)
+                    let tuning = (cellCode && tuningNote.note === cellCode && (tuningNote.octave === null || tuningNote.octave === cell.octave)) 
                         ? tuningNote.detuning : null;
                     let activeHarmony = harmony ? harmony.filter(note => note.code === cellCode) : null;
                     
