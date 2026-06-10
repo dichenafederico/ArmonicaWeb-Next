@@ -63,10 +63,6 @@ const Metronomo = ({ cambioArpegio, isPlaying: externalIsPlaying, onPlayToggle, 
   const startMetronome = (fromExternal = false) => {
     if (!internalIsPlaying) {
       setInternalIsPlaying(true); 
-      setCurrentBeat(0);     
-      setCurrentMeasure(0);
-      latestCurrentMeasure.current = 0;
-      intervalRef.current = setInterval(playAudio, (60 / bpm) * 1000);
       if (!fromExternal && onPlayToggle) onPlayToggle();
     }
   };
@@ -84,7 +80,6 @@ const Metronomo = ({ cambioArpegio, isPlaying: externalIsPlaying, onPlayToggle, 
 
   const stopMetronome = (fromExternal = false) => {
     setInternalIsPlaying(false);
-    clearInterval(intervalRef.current);
     if (!fromExternal && onPlayToggle) onPlayToggle();
   };
 
@@ -111,10 +106,6 @@ const Metronomo = ({ cambioArpegio, isPlaying: externalIsPlaying, onPlayToggle, 
   const handleBpmChange = (e) => {
     setInternalBpm(e.target.value);
     if (onBpmChange) onBpmChange(e.target.value);
-    if (internalIsPlaying) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = setInterval(playAudio, (60 / e.target.value) * 1000);      
-    }
   };
 
   return (
