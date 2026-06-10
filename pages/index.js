@@ -66,6 +66,7 @@ const App = () => {
   const [playChordAudio, setPlayChordAudio] = useState(true);
   const [synthType, setSynthType] = useState("triangle");
   const [volume, setVolume] = useState(-12);
+  const [isPlayingChords, setIsPlayingChords] = useState(false);
   
   // Audio configuration and rhythmic style states
   const [showAudioSettings, setShowAudioSettings] = useState(false);
@@ -172,7 +173,7 @@ const App = () => {
     }
   }, [instrument]);
 
-  const isPlayingAny = isPlayingMetronome;
+  const isPlayingAny = isPlayingChords || isPlayingMetronome;
   const prevIsPlayingAnyRef = useRef(false);
 
   useEffect(() => {
@@ -218,7 +219,7 @@ const App = () => {
         }
 
         // 3. Play chord audio if enabled
-        if (isPlayingMetronome && activeArpeggios.length > 0) {
+        if (isPlayingChords && activeArpeggios.length > 0) {
           const activeChord = activeArpeggios[currentChordIndex];
           if (activeChord) {
             let notes = [];
@@ -264,7 +265,7 @@ const App = () => {
         beatIndexRef.current = nextBeat;
         
         // 4. Advance chord index at the end of beat 3, so next beat 0 tick handles the new chord
-        if (isPlayingMetronome && nextBeat === 0 && activeArpeggios.length > 0) {
+        if (isPlayingChords && nextBeat === 0 && activeArpeggios.length > 0) {
           currentChordIndex = currentChordIndex >= activeArpeggios.length - 1 ? 0 : currentChordIndex + 1;
           setReproducingArpeggio(currentChordIndex);
         }
@@ -287,14 +288,30 @@ const App = () => {
         clearInterval(playbackIntervalRef.current);
       }
     };
-  }, [bpm, isPlayingMetronome, activeArpeggios, playChordAudio, rhythmStyle, instrument]);
+  }, [bpm, isPlayingAny, isPlayingMetronome, isPlayingChords, activeArpeggios, playChordAudio, rhythmStyle, instrument]);
 
   const togglePlayMetronome = () => {
-    if (!isPlayingMetronome && Tone.context.state !== "running") {
+    if (Tone.context.state !== 'running') {
       Tone.start();
     }
     setIsPlayingMetronome(!isPlayingMetronome);
   };
+
+  const togglePlayChords = () => {
+    if (isPlayingChords) {
+      setIsPlayingChords(false);
+    } else {
+      if (activeArpeggios.length === 0) return;
+      setIsPlayingChords(true);
+      if (Tone.context.state !== 'running') {
+        Tone.start();
+      }
+      const firstArpeggio = activeArpeggios[reproducingArpeggio >= activeArpeggios.length ? 0 : reproducingArpeggio];
+      setActiveHarmony(firstArpeggio.arpeggio || firstArpeggio.arpegio);
+      setActiveArpeggioName(firstArpeggio.name || firstArpeggio.nombre);
+    }
+  };
+
   const toggleHarmonicaType = () => {
     setHarmonica((prev) => 
       prev instanceof DiatonicHarmonica ? new ChromaticHarmonica(3) : new DiatonicHarmonica()
@@ -561,6 +578,33 @@ const App = () => {
                       <h6 style={{ margin: 0, fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase' }}>Chord Audio Settings</h6>
                       {showAudioSettings ? <ExpandLessIcon sx={{ color: '#de6b62', marginLeft: '4px' }} /> : <ExpandMoreIcon sx={{ color: '#de6b62', marginLeft: '4px' }} />}
                     </div>
+                    {isClient && (
+                      <Button
+                        variant="contained"
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          togglePlayChords();
+                        }}
+                        disabled={activeArpeggios.length === 0}
+                        startIcon={isPlayingChords ? <StopIcon /> : <PlayArrowIcon />}
+                        sx={{
+                          textTransform: 'none',
+                          borderRadius: '20px',
+                          fontWeight: 'bold',
+                          fontSize: '0.7rem',
+                          padding: '2px 10px',
+                          minWidth: '70px',
+                          height: '24px',
+                          backgroundColor: isPlayingChords ? '#e06055' : '#de6b62',
+                          '&:hover': {
+                            backgroundColor: isPlayingChords ? '#c74f45' : '#c95a51'
+                          }
+                        }}
+                      >
+                        {isPlayingChords ? "Stop" : "Play"}
+                      </Button>
+                    )}
                   </div>
                   
                   <Collapse in={showAudioSettings}>
@@ -649,7 +693,7 @@ const App = () => {
                       <ArpegiosActivosContenedorGral
                         activeArpeggios={activeArpeggios}
                         onArpegioActivoClick={handleArpeggioChange}
-                        currentlyPlayingIndex={isPlayingMetronome ? reproducingArpeggio : -1}
+                        currentlyPlayingIndex={isPlayingChords ? reproducingArpeggio : -1}
                       />
                     )}
                   </div>

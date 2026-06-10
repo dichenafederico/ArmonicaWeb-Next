@@ -125,14 +125,7 @@ const Metronomo = ({ cambioArpegio }) => {
       >
         <Estado />
       </IconButton>
-      <Tooltip title="Activa secunecia acordes" aria-label="add" arrow>
-        <Checkbox
-          icon={<MusicNoteIcon />}
-          checkedIcon={<MusicNoteIcon />}
-          onChange={handleCheckBox}
-          name="checkedH"
-        />
-      </Tooltip>
+      
 
       <style jsx>{`
     .metronome {
