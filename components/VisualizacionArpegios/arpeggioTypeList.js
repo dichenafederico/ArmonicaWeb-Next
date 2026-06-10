@@ -8,7 +8,20 @@ const ArpeggioTypeList = ({ tiposArpegios, onChangeValue, value }) => {
         <Autocomplete
             size="small"
             options={tiposArpegios}
-            getOptionLabel={(option) => option.name || ""}
+            getOptionLabel={(option) => option.code || ""}
+            filterOptions={(options, { inputValue }) => {
+                const lower = inputValue.toLowerCase();
+                return options.filter(o => 
+                    (o.name && o.name.toLowerCase().includes(lower)) ||
+                    (o.code && o.code.toLowerCase().includes(lower))
+                );
+            }}
+            renderOption={(props, option) => (
+                <li {...props}>
+                    <strong>{option.code}</strong>&nbsp;
+                    <span style={{opacity: 0.55, fontSize: '0.85em'}}>({option.name})</span>
+                </li>
+            )}
             value={value}
             onChange={(event, newValue) => {
                 if (newValue) {
@@ -20,10 +33,10 @@ const ArpeggioTypeList = ({ tiposArpegios, onChangeValue, value }) => {
                     {...params} 
                     label="Arpeggio Type" 
                     variant="outlined" 
-                    sx={{ width: 200, marginLeft: 1 }}
+                    sx={{ width: 220, marginLeft: 1 }}
                 />
             )}
-            isOptionEqualToValue={(option, value) => option.name === value.name}
+            isOptionEqualToValue={(option, value) => option.code === value.code}
         />
     );
 };

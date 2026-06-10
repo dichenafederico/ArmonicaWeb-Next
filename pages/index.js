@@ -400,7 +400,7 @@ const App = () => {
   const addActiveScale = () => {
     const scaleNotes = activeScale.getNotes(activeTonality.tonic);
     const arpeggio = {
-      name: activeTonality.tonic.name + " " + activeScale.name,
+      name: (activeTonality.tonic.displayName || activeTonality.tonic.name) + " " + activeScale.name,
       arpeggio: scaleNotes,
     };
     dispatch(addActiveArpeggio(arpeggio));
@@ -409,7 +409,7 @@ const App = () => {
   const addActiveMode = () => {
     const modeNotes = activeMode.getHarmony(activeTonality.tonic);
     const arpeggio = {
-      name: activeTonality.tonic.name + " " + activeMode.name,
+      name: (activeTonality.tonic.displayName || activeTonality.tonic.name) + " " + activeMode.name,
       arpeggio: modeNotes,
     };
     dispatch(addActiveArpeggio(arpeggio));
@@ -449,9 +449,9 @@ const App = () => {
           </Button>
           
           <div className="active-info-chips">
-             <div className="info-chip highlight"><strong>Key:</strong> {activeHarmonyTonality.tonic.name} {harmonyMode.name}</div>
+             <div className="info-chip highlight"><strong>Key:</strong> {activeHarmonyTonality.tonic.displayName || activeHarmonyTonality.tonic.name} {harmonyMode.name}</div>
              <div className="info-chip"><strong>Intervals:</strong> {activeHarmony ? activeHarmony.map((g) => g.name).join("-") : "-"}</div>
-             <div className="info-chip"><strong>Notes:</strong> {activeHarmony ? activeHarmony.map((g) => g.code).join("-") : "-"}</div>
+             <div className="info-chip"><strong>Notes:</strong> {activeHarmony ? activeHarmony.map((g) => g.displayName || g.code).join("-") : "-"}</div>
           </div>
           
           <div className="top-tools">

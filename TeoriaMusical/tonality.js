@@ -1,5 +1,5 @@
 import Arpeggio from './arpeggio'
-import { ArpeggioTypes, Notes, ScaleHarmonization, MinorScaleHarmonizationChords, MajorScaleHarmonizationChords, HarmonizationType } from './musicTheory'
+import { ArpeggioTypes, Notes, ScaleHarmonization, MinorScaleHarmonizationChords, MajorScaleHarmonizationChords, HarmonizationType, EnharmonicSpellings, getNoteByCode } from './musicTheory'
 
 export default class Tonality {
     constructor(tonic) {
@@ -32,7 +32,9 @@ export default class Tonality {
     getPosition = (positionNumber) => {
         var nextTonality = this;
         for (let index = 1; index < positionNumber; index++) {
-            nextTonality = new Tonality(Notes[nextTonality.tonality["V"].code]);
+            var vCode = nextTonality.tonality["V"].code;
+            var vNote = getNoteByCode(vCode) || Notes[vCode];
+            nextTonality = new Tonality(vNote);
         }
         return nextTonality;
     }
@@ -41,7 +43,9 @@ export default class Tonality {
         var nextTonality = this;
         for (let index = 1; index < 13; index++) {
             if (nextTonality.tonality["I"].code == note) return (index);
-            nextTonality = new Tonality(Notes[nextTonality.tonality["V"].code]);
+            var vCode = nextTonality.tonality["V"].code;
+            var vNote = getNoteByCode(vCode) || Notes[vCode];
+            nextTonality = new Tonality(vNote);
         }
     }
 
@@ -50,9 +54,11 @@ export default class Tonality {
         for (let index = 0; index < 7; index++) {
             var degree = ScaleHarmonization[index];
             var tonic = this.tonality[degree];
-            var note = Notes[tonic.code];
+            var note = getNoteByCode(tonic.code) || Notes[tonic.code];
+            // Create a note-like object with contextual display name
+            var contextualNote = { ...note, displayName: tonic.displayName || tonic.code };
             var arpeggioType = mode == HarmonizationType.Minor.value ? MinorScaleHarmonizationChords[index] : MajorScaleHarmonizationChords[index];
-            var correspondingArpeggio = new Arpeggio(arpeggioType, note);
+            var correspondingArpeggio = new Arpeggio(arpeggioType, contextualNote);
             tonalityScaleHarmonization.push(correspondingArpeggio);
         }
         return tonalityScaleHarmonization;
@@ -71,6 +77,10 @@ export default class Tonality {
             return;
         }
 
+        // Get contextual spellings based on tonic
+        const tonicCode = harmonicaTonality.code || harmonicaTonality.displayName || "C";
+        const spellings = EnharmonicSpellings[tonicCode] || EnharmonicSpellings["C"];
+
         for (let index = 1; index < 13; index++) {
             var harmonyDegree = this.getHarmonyDegree(index, harmonicaProgression);
             if (!harmonyDegree) {
@@ -84,7 +94,8 @@ export default class Tonality {
                 continue;
             }
 
-            harmonyDegree.code = note ? note.code : "";
+            harmonyDegree.code = note.code;
+            harmonyDegree.displayName = spellings[note.value - 1];
             interval == Notes.B.value ? interval = Notes.C.value : interval += 1;
         }
     }

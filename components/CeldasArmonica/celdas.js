@@ -11,14 +11,15 @@ const Celdas = ({ armonica, tonalityActive, tuningNote, harmony }) => {
                 armonica.cells.map((cell, index) => {
                     let active = false;
                     let cellDegree = tonalityActive.tonality[cell.harmonyDegree];
-                    let cellNote = cellDegree ? cellDegree.code : cell.harmonyDegree;
-                    // Check note and octave if available
-                    let tuning = (tuningNote.note === cellNote && (tuningNote.octave === null || tuningNote.octave === cell.octave)) 
+                    let cellCode = cellDegree ? cellDegree.code : null;
+                    let cellNote = cellDegree ? (cellDegree.displayName || cellDegree.code) : cell.harmonyDegree;
+                    // Check note and octave if available (use internal code for tuner matching)
+                    let tuning = (tuningNote.note === cellCode && (tuningNote.octave === null || tuningNote.octave === cell.octave)) 
                         ? tuningNote.detuning : null;
-                    let activeHarmony = harmony ? harmony.filter(note => note.code === cellNote) : null;
+                    let activeHarmony = harmony ? harmony.filter(note => note.code === cellCode) : null;
                     
                     if (activeHarmony && activeHarmony[0]) {
-                        cellNote = activeHarmony[0].name + "/" + activeHarmony[0].code;
+                        cellNote = activeHarmony[0].displayName || activeHarmony[0].code;
                         active = true;
                     }
                     

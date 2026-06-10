@@ -6,7 +6,7 @@ export default class Arpeggio {
        this.arpeggio = this.arpeggioTonality.getHarmony(arpeggioType.arpeggioDegrees || arpeggioType.arpeggioDegrees);
        
        const typeCode = arpeggioType.code || arpeggioType.codigo || "";
-       this.name = (tonic.code || "") + typeCode;
+       this.name = (tonic.displayName || tonic.code || "") + typeCode;
        this.nombre = this.name; // Keep both for compatibility
        
        this.type = arpeggioType;
@@ -19,7 +19,7 @@ export default class Arpeggio {
        this.arpeggio = this.arpeggioTonality.getHarmony(this.type.arpeggioDegrees);
        
        const typeCode = this.type.code || this.type.codigo || "";
-       this.name = (newTonality.tonic.code || "") + typeCode;
+       this.name = (newTonality.tonic.displayName || newTonality.tonic.code || "") + typeCode;
        this.nombre = this.name;
        
        this.tonic = newTonality.tonic;
