@@ -59,6 +59,7 @@ var fullOctave = [
 
 export default class ChromaticHarmonica {
     constructor(octaveCount) {
+        this.octaveCount = octaveCount;
         this.cells = [];
         this.cells.push.apply(this.cells, fullOctave) 
         this.generateOctaves(fullOctave, octaveCount);

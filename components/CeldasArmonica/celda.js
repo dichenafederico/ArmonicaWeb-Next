@@ -13,6 +13,34 @@ export default class Celda extends Component {
         let clase =  this.props.tipoNota == 4 ? "numerosCeldas" : "textoAgujero";    
         let colorAfinacion = this.props.afinacion >= 95 ? "green" : "#8f8e8ef0";       
         let fondoAfinacion = this.props.afinacion != null ? "-webkit-linear-gradient(top, " + colorAfinacion  + " " + this.props.afinacion +"%, white 28%)" : color;    
+
+        const totalHoles = this.props.totalHoles || 10;
+        let cellWidth = "4vw";
+        let cellHeight = "4vw";
+        let fontSize = "0.9vw";
+        let numberFontSize = "1.5vw";
+        let borderRadius = "15px";
+        let note4Width = "2.5vw";
+        let note4Height = "2.5vw";
+
+        if (totalHoles === 12) {
+            cellWidth = "3.3vw";
+            cellHeight = "3.3vw";
+            fontSize = "0.75vw";
+            numberFontSize = "1.2vw";
+            borderRadius = "12px";
+            note4Width = "2.1vw";
+            note4Height = "2.1vw";
+        } else if (totalHoles === 16) {
+            cellWidth = "2.5vw";
+            cellHeight = "2.5vw";
+            fontSize = "0.55vw";
+            numberFontSize = "0.9vw";
+            borderRadius = "8px";
+            note4Width = "1.6vw";
+            note4Height = "1.6vw";
+        }
+
         return (
             <div className={className} style={{background:fondoAfinacion}}>
                 <span className={clase} >{this.props.nota}</span>              
@@ -43,13 +71,13 @@ export default class Celda extends Component {
                 
                 .celda{
                     cursor: pointer;
-                    width: 4vw;
-                    height: 4vw;
+                    width: ${cellWidth};
+                    height: ${cellHeight};
                     border: 1px solid #333333;
                     border-collapse: collapse;
                     overflow: hidden;
                     border-width: 2px;    
-                    border-radius: 15px;
+                    border-radius: ${borderRadius};
                     z-index: 10;
                     margin:auto;
                 }    
@@ -116,8 +144,8 @@ export default class Celda extends Component {
                   }
                   .tipoNota-4{
                     grid-row: 4;
-                    height: 2.5vw;
-                    width: 2.5vw;
+                    height: ${note4Height};
+                    width: ${note4Width};
                     background-color: #ffa8a8!important;  
                   }
                   .tipoNota-5{
@@ -153,7 +181,7 @@ export default class Celda extends Component {
                   .textoAgujero{ 
                     display: block;  
                     font-style: italic;
-                    font-size: 0.9vw;
+                    font-size: ${fontSize};
                     font-weight: bold;
                     padding-top: 32%;
                     height: 100%;  
@@ -162,7 +190,7 @@ export default class Celda extends Component {
                   .numerosCeldas{
                     display: block;  
                     font-style: italic;
-                    font-size: 1.5vw;
+                    font-size: ${numberFontSize};
                     padding-top: 3%;
                     height: 100%;
                   }  

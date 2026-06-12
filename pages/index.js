@@ -313,9 +313,15 @@ const App = () => {
   };
 
   const toggleHarmonicaType = () => {
-    setHarmonica((prev) => 
-      prev instanceof DiatonicHarmonica ? new ChromaticHarmonica(3) : new DiatonicHarmonica()
-    );
+    setHarmonica((prev) => {
+      if (prev instanceof DiatonicHarmonica) {
+        return new ChromaticHarmonica(3); // Chromatic 12
+      } else if (prev instanceof ChromaticHarmonica && prev.octaveCount === 3) {
+        return new ChromaticHarmonica(4); // Chromatic 16
+      } else {
+        return new DiatonicHarmonica(); // Diatonic
+      }
+    });
   };
 
   const changeActiveTonality = (e) => {
@@ -450,6 +456,7 @@ const App = () => {
           
           <div className="active-info-chips">
              <div className="info-chip highlight"><strong>Key:</strong> {activeHarmonyTonality.tonic.displayName || activeHarmonyTonality.tonic.name} {harmonyMode.name}</div>
+             <div className="info-chip"><strong>Harmonica:</strong> {harmonica instanceof DiatonicHarmonica ? 'Diatonic' : (harmonica.octaveCount === 3 ? 'Chromatic 12' : 'Chromatic 16')}</div>
              <div className="info-chip"><strong>Intervals:</strong> {activeHarmony ? activeHarmony.map((g) => g.name).join("-") : "-"}</div>
              <div className="info-chip"><strong>Notes:</strong> {activeHarmony ? activeHarmony.map((g) => g.displayName || g.code).join("-") : "-"}</div>
           </div>

@@ -5,6 +5,8 @@ import DiatonicHarmonica from '../../TeoriaMusical/diatonicHarmonica';
 import ChromaticHarmonica from '../../TeoriaMusical/chromaticHarmonica';
 
 const Celdas = ({ armonica, tonalityActive, tuningNote, harmony }) => {
+    const totalHoles = Math.max(...armonica.cells.map(c => c.hole), 10);
+
     return (
         <div id="table">
             {
@@ -32,6 +34,7 @@ const Celdas = ({ armonica, tonalityActive, tuningNote, harmony }) => {
                             agujero={cell.hole} 
                             grado={cell.harmonyDegree} 
                             nota={cellNote} 
+                            totalHoles={totalHoles}
                         />
                     );
                 })
