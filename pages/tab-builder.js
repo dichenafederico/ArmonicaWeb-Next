@@ -86,9 +86,10 @@ const TabBuilderApp = () => {
 
   // Effect to render sheet music when sheet tab is active and notes list changes
   useEffect(() => {
+    let timeoutId;
     if (activeTab === 'sheet' && abcjsRef.current && notesList.length > 0) {
-      // Small delay to ensure the DOM element is mounted
-      setTimeout(() => {
+      // Small delay to ensure the DOM element is mounted and visible
+      timeoutId = setTimeout(() => {
         const el = document.getElementById('sheet-music-paper');
         if (el) {
           const abcText = generateABCText(notesList, bpm, activeTonality.tonic.code);
@@ -99,6 +100,9 @@ const TabBuilderApp = () => {
         }
       }, 50);
     }
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
   }, [notesList, activeTab, bpm, activeTonality]);
 
   const changeActiveTonality = (e) => {
@@ -756,71 +760,72 @@ const TabBuilderApp = () => {
 
         {/* Content area */}
         <div className="tb-content-area glass-panel p-3 rounded-bottom-4 border border-top-0 mb-3">
-          {activeTab === 'tabs' ? (
-            <>
-              {/* Card grid */}
-              <div className="timeline-outer p-3 rounded-3 border bg-light position-relative mb-3">
-                {notesList.length === 0 ? (
-                  <div className="d-flex flex-column align-items-center justify-content-center text-muted" style={{ minHeight: '100px' }}>
-                    <VolumeUpIcon sx={{ fontSize: 36, opacity: 0.4 }} className="mb-1" />
-                    <span className="small">Grabá o agregá notas desde la armónica de abajo.</span>
-                  </div>
-                ) : (
-                  <div className="timeline-inner d-flex flex-wrap gap-2 align-content-start overflow-auto">
-                    {notesList.map((item, idx) => (
-                      <div 
-                        key={item.id} 
-                        className={`note-block p-2 rounded-3 border text-center position-relative ${currentPlaybackIndex === idx ? 'playing' : ''} ${item.isRest ? 'rest-block' : 'pitch-block'}`}
-                        style={{ width: `${getNoteWidth(item.duration)}px` }}
-                      >
-                        <div className="note-tab fw-bold text-dark">{item.isRest ? "-" : item.tab}</div>
-                        <div className="note-name small text-muted">{item.isRest ? "—" : `${item.note}${item.octave}`}</div>
-                        
-                        <select 
-                          className="border-0 bg-transparent text-secondary p-0 mt-1 w-100" 
-                          style={{ fontSize: '0.65rem', outline: 'none', cursor: 'pointer', appearance: 'none', textAlign: 'center', textAlignLast: 'center' }}
-                          value={item.duration / (60 / bpm)}
-                          onChange={(e) => updateNoteDuration(item.id, Number(e.target.value))}
-                          title="Cambiar duración"
-                        >
-                          <option value={4}>Redonda</option>
-                          <option value={2}>Blanca</option>
-                          <option value={1}>Negra</option>
-                          <option value={0.5}>Corchea</option>
-                          <option value={0.25}>Semi.</option>
-                          {![4, 2, 1, 0.5, 0.25].includes(item.duration / (60 / bpm)) && (
-                            <option value={item.duration / (60 / bpm)}>{(item.duration / (60 / bpm)).toFixed(2)}x</option>
-                          )}
-                        </select>
-                        <button 
-                          className="delete-block-btn position-absolute top-0 end-0 border-0 bg-transparent text-danger p-1"
-                          onClick={() => deleteNote(item.id)}
-                          title="Eliminar nota"
-                        >×</button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              {/* Plain text */}
-              {notesList.length > 0 && (
-                <div className="plain-tab-text p-2 rounded-3 border bg-white mb-3" style={{ fontFamily: 'monospace', fontSize: '0.9rem', wordBreak: 'break-word', lineHeight: '1.8', letterSpacing: '1px' }}>
-                  {getPlainTabText()}
+          
+          {/* Tabs View */}
+          <div className={activeTab === 'tabs' ? "d-block" : "d-none"}>
+            {/* Card grid */}
+            <div className="timeline-outer p-3 rounded-3 border bg-light position-relative mb-3">
+              {notesList.length === 0 ? (
+                <div className="d-flex flex-column align-items-center justify-content-center text-muted" style={{ minHeight: '100px' }}>
+                  <VolumeUpIcon sx={{ fontSize: 36, opacity: 0.4 }} className="mb-1" />
+                  <span className="small">Grabá o agregá notas desde la armónica de abajo.</span>
                 </div>
-              )}
-            </>
-          ) : (
-            /* Sheet Music */
-            <div className="p-3 rounded-3 border bg-white" style={{ minHeight: '120px' }}>
-              <div id="sheet-music-paper" className="w-100 overflow-auto"></div>
-              {notesList.length === 0 && (
-                <div className="d-flex flex-column align-items-center justify-content-center text-muted" style={{ minHeight: '80px' }}>
-                  <MusicNoteIcon sx={{ fontSize: 36, opacity: 0.4 }} className="mb-1" />
-                  <span className="small">La partitura aparecerá aquí al agregar notas.</span>
+              ) : (
+                <div className="timeline-inner d-flex flex-wrap gap-2 align-content-start overflow-auto">
+                  {notesList.map((item, idx) => (
+                    <div 
+                      key={item.id} 
+                      className={`note-block p-2 rounded-3 border text-center position-relative ${currentPlaybackIndex === idx ? 'playing' : ''} ${item.isRest ? 'rest-block' : 'pitch-block'}`}
+                      style={{ width: `${getNoteWidth(item.duration)}px` }}
+                    >
+                      <div className="note-tab fw-bold text-dark">{item.isRest ? "-" : item.tab}</div>
+                      <div className="note-name small text-muted">{item.isRest ? "—" : `${item.note}${item.octave}`}</div>
+                      
+                      <select 
+                        className="border-0 bg-transparent text-secondary p-0 mt-1 w-100" 
+                        style={{ fontSize: '0.65rem', outline: 'none', cursor: 'pointer', appearance: 'none', textAlign: 'center', textAlignLast: 'center' }}
+                        value={item.duration / (60 / bpm)}
+                        onChange={(e) => updateNoteDuration(item.id, Number(e.target.value))}
+                        title="Cambiar duración"
+                      >
+                        <option value={4}>Redonda</option>
+                        <option value={2}>Blanca</option>
+                        <option value={1}>Negra</option>
+                        <option value={0.5}>Corchea</option>
+                        <option value={0.25}>Semi.</option>
+                        {![4, 2, 1, 0.5, 0.25].includes(item.duration / (60 / bpm)) && (
+                          <option value={item.duration / (60 / bpm)}>{(item.duration / (60 / bpm)).toFixed(2)}x</option>
+                        )}
+                      </select>
+                      <button 
+                        className="delete-block-btn position-absolute top-0 end-0 border-0 bg-transparent text-danger p-1"
+                        onClick={() => deleteNote(item.id)}
+                        title="Eliminar nota"
+                      >×</button>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
-          )}
+            {/* Plain text */}
+            {notesList.length > 0 && (
+              <div className="plain-tab-text p-2 rounded-3 border bg-white mb-3" style={{ fontFamily: 'monospace', fontSize: '0.9rem', wordBreak: 'break-word', lineHeight: '1.8', letterSpacing: '1px' }}>
+                {getPlainTabText()}
+              </div>
+            )}
+          </div>
+
+          {/* Sheet Music View */}
+          <div className={`p-3 rounded-3 border bg-white ${activeTab === 'sheet' ? "d-block" : "d-none"}`} style={{ minHeight: '120px' }}>
+            <div id="sheet-music-paper" className="w-100 overflow-auto"></div>
+            {notesList.length === 0 && (
+              <div className="d-flex flex-column align-items-center justify-content-center text-muted" style={{ minHeight: '80px' }}>
+                <MusicNoteIcon sx={{ fontSize: 36, opacity: 0.4 }} className="mb-1" />
+                <span className="small">La partitura aparecerá aquí al agregar notas.</span>
+              </div>
+            )}
+          </div>
+
         </div>
 
         {/* Clickable Harmonica Diagram — always visible */}
