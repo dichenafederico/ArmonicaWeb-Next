@@ -48,6 +48,8 @@ const TabBuilderApp = () => {
   const synthRef = useRef(null);
   const metronomeIntervalRef = useRef(null);
   const abcjsRef = useRef(null);
+  const isRecordingRef = useRef(false);
+  const tunerRef = useRef(null);
 
   useEffect(() => {
     setIsClient(true);
@@ -123,11 +125,17 @@ const TabBuilderApp = () => {
     }
     setNotesList([]);
     setIsRecording(true);
+    isRecordingRef.current = true;
     setIsPlaying(false);
     recordingStartTime.current = Tone.now();
     noteStartTime.current = Tone.now();
     lastNoteRef.current = null;
     lastOctaveRef.current = null;
+
+    // Auto-enable microphone for the tuner
+    if (tunerRef.current && tunerRef.current.enableMicrophone) {
+      tunerRef.current.enableMicrophone();
+    }
 
     if (metronomeSound) {
       const intervalMs = (60 / bpm) * 1000;
@@ -140,6 +148,7 @@ const TabBuilderApp = () => {
   // Stop recording
   const stopRecording = () => {
     setIsRecording(false);
+    isRecordingRef.current = false;
     if (metronomeIntervalRef.current) {
       clearInterval(metronomeIntervalRef.current);
     }
@@ -212,12 +221,12 @@ const TabBuilderApp = () => {
   const handleAudioNote = useCallback((note, detuning, octave) => {
     setRecordedAudioNote({ note, detuning, octave });
     
-    if (!isRecording) return;
+    if (!isRecordingRef.current) return;
     
     if (note !== lastNoteRef.current || octave !== lastOctaveRef.current) {
       saveNote(note, octave);
     }
-  }, [isRecording, activeTonality, notationStyle, bpm, quantize, harmonicaType]);
+  }, [activeTonality, notationStyle, bpm, quantize, harmonicaType]);
 
   // Playback the recorded notes list
   const startPlayback = async () => {
@@ -449,9 +458,12 @@ const TabBuilderApp = () => {
                   <DeleteIcon /> Limpiar
                 </Button>
               </div>
-
-              {/* Live Status indicator */}
+              {/* Microphone + Live Status */}
               <div className="live-detector-card mt-4 p-3 rounded-3 text-center">
+                <div className="d-flex align-items-center justify-content-center gap-2 mb-2">
+                  <span className="text-uppercase small fw-semibold text-muted">Micrófono</span>
+                  {isClient && <Tuner handlerAudioNote={handleAudioNote} />}
+                </div>
                 <div className="text-uppercase small fw-semibold text-muted">Nota Detectada</div>
                 <div className="detected-pitch-value my-2 fw-bold text-success">
                   {recordedAudioNote.note ? `${recordedAudioNote.note}${recordedAudioNote.octave}` : "Silencio"}
@@ -539,10 +551,6 @@ const TabBuilderApp = () => {
           </Col>
         </Row>
       </Container>
-
-      <div className="top-tools" style={{ display: 'none' }}>
-        <Tuner handlerAudioNote={handleAudioNote} />
-      </div>
 
       <Footer />
 
