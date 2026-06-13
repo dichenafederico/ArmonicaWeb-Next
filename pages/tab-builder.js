@@ -25,6 +25,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import DiatonicHarmonica from '../TeoriaMusical/diatonicHarmonica';
 import ChromaticHarmonica from '../TeoriaMusical/chromaticHarmonica';
 import * as Tone from 'tone';
+import MidiWriter from 'midi-writer-js';
 
 const noteStringsForMidi = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
 
@@ -47,6 +48,10 @@ const TabBuilderApp = () => {
   const [metronomeSound, setMetronomeSound] = useState(false);
   const [activeTab, setActiveTab] = useState('tabs'); // 'tabs' or 'sheet'
   const [showConfig, setShowConfig] = useState(false);
+  
+  // Editor States
+  const [selectedDuration, setSelectedDuration] = useState(1); // Default to Quarter note (1 beat)
+  const [transposeKeepNotes, setTransposeKeepNotes] = useState(false);
 
   // Time tracking references
   const noteStartTime = useRef(0);
@@ -296,6 +301,71 @@ const TabBuilderApp = () => {
     alert("Tablaturas copiadas al portapapeles: " + text);
   };
 
+  const updateNoteDuration = (id, newDurationBeats) => {
+    const newDurationSeconds = (60 / bpm) * newDurationBeats;
+    setNotesList(prev => {
+      let currentStart = 0;
+      return prev.map(note => {
+        if (note.id === id) {
+          const updatedNote = { ...note, duration: newDurationSeconds, start: currentStart };
+          currentStart += newDurationSeconds;
+          return updatedNote;
+        } else {
+          const updatedNote = { ...note, start: currentStart };
+          currentStart += note.duration;
+          return updatedNote;
+        }
+      });
+    });
+  };
+
+  const transposeGlobal = (semitones) => {
+    setNotesList(prev => prev.map(note => {
+      if (note.isRest) return note;
+      
+      const currentMidiMatch = getHarmonicaMidiMap(activeTonality, harmonicaType).find(m => m.note === note.note && m.octave === note.octave);
+      let targetMidi = 60;
+      if (currentMidiMatch) {
+        targetMidi = currentMidiMatch.midi + semitones;
+      } else {
+        const midiIndex = noteStringsForMidi.indexOf(note.note);
+        if (midiIndex !== -1) {
+          targetMidi = (note.octave + 1) * 12 + midiIndex + semitones;
+        }
+      }
+      
+      let minDiff = 1000;
+      let newCell = null;
+      getHarmonicaMidiMap(activeTonality, harmonicaType).forEach(item => {
+        const diff = Math.abs(item.midi - targetMidi);
+        if (diff < minDiff && diff < 1.5) {
+          minDiff = diff;
+          newCell = item.cell;
+        }
+      });
+      
+      if (newCell) {
+        const cellDegree = activeTonality.tonality[newCell.harmonyDegree];
+        return {
+          ...note,
+          note: cellDegree ? cellDegree.code : note.note,
+          octave: newCell.octave,
+          tab: formatCellToTab(newCell, notationStyle, harmonicaType)
+        };
+      } else {
+        const newOctave = Math.floor(targetMidi / 12) - 1;
+        const newNoteIndex = targetMidi % 12;
+        const newNoteName = noteStringsForMidi[newNoteIndex];
+        return {
+          ...note,
+          note: newNoteName,
+          octave: newOctave,
+          tab: "?"
+        };
+      }
+    }));
+  };
+
   // Add note from clicking a harmonica cell
   const addNoteFromCell = (cell) => {
     const cellDegree = activeTonality.tonality[cell.harmonyDegree];
@@ -303,13 +373,14 @@ const TabBuilderApp = () => {
     const noteName = cellDegree.code;
     const octave = cell.octave;
     const beatDuration = 60 / bpm;
+    const duration = beatDuration * selectedDuration;
     const tabSymbol = formatCellToTab(cell, notationStyle, harmonicaType);
     
     setNotesList(prev => [...prev, {
       id: Math.random().toString(36).substr(2, 9),
       note: noteName,
       octave: octave,
-      duration: beatDuration,
+      duration: duration,
       start: prev.length > 0 ? prev[prev.length - 1].start + prev[prev.length - 1].duration : 0,
       tab: tabSymbol,
       isRest: false
@@ -319,11 +390,12 @@ const TabBuilderApp = () => {
   // Add a rest
   const addRest = () => {
     const beatDuration = 60 / bpm;
+    const duration = beatDuration * selectedDuration;
     setNotesList(prev => [...prev, {
       id: Math.random().toString(36).substr(2, 9),
       note: "-",
       octave: 0,
-      duration: beatDuration,
+      duration: duration,
       start: prev.length > 0 ? prev[prev.length - 1].start + prev[prev.length - 1].duration : 0,
       tab: "-",
       isRest: true
@@ -362,6 +434,52 @@ const TabBuilderApp = () => {
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
+  };
+
+  const exportABC = () => {
+    if (notesList.length === 0) return;
+    const abcText = generateABCText(notesList, bpm, activeTonality.tonic.code);
+    const blob = new Blob([abcText], { type: 'text/plain;charset=utf-8' });
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute("href", URL.createObjectURL(blob));
+    downloadAnchor.setAttribute("download", `armonica_${activeTonality.tonic.name}.abc`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    document.body.removeChild(downloadAnchor);
+  };
+
+  const exportMIDI = () => {
+    if (notesList.length === 0) return;
+    const track = new MidiWriter.Track();
+    track.addEvent(new MidiWriter.ProgramChangeEvent({ instrument: 22 })); // Harmonica
+    track.setTempo(bpm);
+    
+    notesList.forEach(item => {
+      const beats = item.duration / (60 / bpm); // Duration in beats (Quarter note = 1 beat)
+      // midi-writer-js supports duration like '1' (whole), '2' (half), '4' (quarter), '8' (eighth)
+      // But we can also pass ticks. 'T' + ticks (1 beat = 128 ticks).
+      const ticks = Math.round(beats * 128); 
+      const durationStr = 'T' + ticks;
+      
+      if (item.isRest) {
+        track.addEvent(new MidiWriter.NoteEvent({ pitch: [], duration: durationStr, wait: durationStr }));
+      } else {
+        // Find pitch spelling. We can just use item.note and item.octave for MIDI, 
+        // midi-writer-js understands 'C4', 'C#4', 'Db4', etc.
+        const notePitch = item.note + item.octave;
+        track.addEvent(new MidiWriter.NoteEvent({ pitch: [notePitch], duration: durationStr }));
+      }
+    });
+
+    const write = new MidiWriter.Writer(track);
+    const dataUri = write.dataUri();
+    
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute("href", dataUri);
+    downloadAnchor.setAttribute("download", `armonica_${activeTonality.tonic.name}.mid`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    document.body.removeChild(downloadAnchor);
   };
 
   const generateABCText = (notes, bpm, key) => {
@@ -507,9 +625,37 @@ const TabBuilderApp = () => {
               <Button variant="outline-primary" size="sm" onClick={exportText} disabled={notesList.length === 0} className="d-flex align-items-center gap-1 rounded-pill px-3 py-1">
                 <DownloadIcon fontSize="small" /> Copiar
               </Button>
-              <Button variant="outline-secondary" size="sm" onClick={downloadJson} disabled={notesList.length === 0} className="d-flex align-items-center gap-1 rounded-pill px-3 py-1">
-                <UploadIcon fontSize="small" /> JSON
-              </Button>
+              <div className="dropdown">
+                <Button variant="outline-secondary" size="sm" disabled={notesList.length === 0} className="d-flex align-items-center gap-1 rounded-pill px-3 py-1 dropdown-toggle" data-bs-toggle="dropdown">
+                  <UploadIcon fontSize="small" /> Exportar
+                </Button>
+                <ul className="dropdown-menu shadow-sm">
+                  <li><button className="dropdown-item" onClick={downloadJson}>JSON (Backup)</button></li>
+                  <li><button className="dropdown-item" onClick={exportABC}>Partitura (.abc)</button></li>
+                  <li><button className="dropdown-item" onClick={exportMIDI}>Audio (.mid)</button></li>
+                </ul>
+              </div>
+
+              {/* Toolbar Separator */}
+              <div className="border-start border-2 mx-2" style={{ height: '24px' }}></div>
+
+              {/* Editor controls */}
+              <div className="d-flex align-items-center gap-1 bg-white rounded-pill px-2 border" style={{ height: '32px' }}>
+                <span className="small text-muted fw-bold ps-1">Figura:</span>
+                <Form.Select size="sm" className="border-0 bg-transparent py-0 fw-semibold text-primary" style={{ width: '100px', boxShadow: 'none', fontSize: '0.85rem' }} value={selectedDuration} onChange={(e) => setSelectedDuration(Number(e.target.value))}>
+                  <option value={4}>Redonda</option>
+                  <option value={2}>Blanca</option>
+                  <option value={1}>Negra</option>
+                  <option value={0.5}>Corchea</option>
+                  <option value={0.25}>Semicorch.</option>
+                </Form.Select>
+              </div>
+
+              <div className="d-flex align-items-center gap-1 bg-white rounded-pill px-2 border" style={{ height: '32px' }}>
+                <span className="small text-muted fw-bold ps-1 me-1">Transponer:</span>
+                <Button variant="light" size="sm" className="rounded-circle p-0 d-flex align-items-center justify-content-center border" style={{ width: '24px', height: '24px' }} onClick={() => transposeGlobal(-1)} title="Bajar 1 semitono">-</Button>
+                <Button variant="light" size="sm" className="rounded-circle p-0 d-flex align-items-center justify-content-center border" style={{ width: '24px', height: '24px' }} onClick={() => transposeGlobal(1)} title="Subir 1 semitono">+</Button>
+              </div>
             </div>
 
             {/* Mic + detected note + config toggle */}
@@ -629,7 +775,23 @@ const TabBuilderApp = () => {
                       >
                         <div className="note-tab fw-bold text-dark">{item.isRest ? "-" : item.tab}</div>
                         <div className="note-name small text-muted">{item.isRest ? "—" : `${item.note}${item.octave}`}</div>
-                        <div className="note-duration text-secondary" style={{ fontSize: '0.65rem' }}>{item.duration.toFixed(2)}s</div>
+                        
+                        <select 
+                          className="border-0 bg-transparent text-secondary p-0 mt-1 w-100" 
+                          style={{ fontSize: '0.65rem', outline: 'none', cursor: 'pointer', appearance: 'none', textAlign: 'center', textAlignLast: 'center' }}
+                          value={item.duration / (60 / bpm)}
+                          onChange={(e) => updateNoteDuration(item.id, Number(e.target.value))}
+                          title="Cambiar duración"
+                        >
+                          <option value={4}>Redonda</option>
+                          <option value={2}>Blanca</option>
+                          <option value={1}>Negra</option>
+                          <option value={0.5}>Corchea</option>
+                          <option value={0.25}>Semi.</option>
+                          {![4, 2, 1, 0.5, 0.25].includes(item.duration / (60 / bpm)) && (
+                            <option value={item.duration / (60 / bpm)}>{(item.duration / (60 / bpm)).toFixed(2)}x</option>
+                          )}
+                        </select>
                         <button 
                           className="delete-block-btn position-absolute top-0 end-0 border-0 bg-transparent text-danger p-1"
                           onClick={() => deleteNote(item.id)}
