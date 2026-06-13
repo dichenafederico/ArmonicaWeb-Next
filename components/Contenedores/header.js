@@ -56,6 +56,9 @@ export default function Header() {
             <MenuItem onClick={() => navigateTo('/tab-builder')}>
               Creador de Tablaturas
             </MenuItem>
+            <MenuItem onClick={() => navigateTo('/editor-avanzado')}>
+              Editor Avanzado (PRO)
+            </MenuItem>
           </Menu>
           <Typography variant="h6" style={{ flexGrow: 1, display: 'flex', alignItems: 'center', gap: '8px' }}>
             <img src={logoArmonica} height={30} alt="Logo" />           
