@@ -82,7 +82,7 @@ export const findClosestCell = (noteName, octave, tonalityActive, harmonicaType 
   
   midiMap.forEach(item => {
     const diff = Math.abs(item.midi - targetMidi);
-    if (diff < minDiff && diff < 1.0) { // Limit to 1 semitone tolerance
+    if (diff < minDiff && diff < 1.5) { // Allow up to 1 semitone tolerance
       minDiff = diff;
       bestMatch = item.cell;
     }

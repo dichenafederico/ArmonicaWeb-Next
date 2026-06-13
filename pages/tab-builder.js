@@ -4,7 +4,7 @@ import Header from "../components/Contenedores/header";
 import Footer from "../components/Contenedores/footer";
 import * as MusicTheory from "../TeoriaMusical/musicTheory";
 import Tonality from "../TeoriaMusical/tonality";
-import { findClosestCell, formatCellToTab } from "../utils/tabMapper";
+import { findClosestCell, formatCellToTab, getHarmonicaMidiMap } from "../utils/tabMapper";
 import { Container, Row, Col, Button, Form, Nav } from "react-bootstrap";
 import { Provider } from 'react-redux';
 import store from '../Store/store';
@@ -18,7 +18,12 @@ import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import DownloadIcon from '@mui/icons-material/Download';
 import UploadIcon from '@mui/icons-material/Upload';
 import MusicNoteIcon from '@mui/icons-material/MusicNote';
+import EditNoteIcon from '@mui/icons-material/EditNote';
+import DiatonicHarmonica from '../TeoriaMusical/diatonicHarmonica';
+import ChromaticHarmonica from '../TeoriaMusical/chromaticHarmonica';
 import * as Tone from 'tone';
+
+const noteStringsForMidi = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
 
 const Tuner = dynamic(() => import("../components/Afinador/tuner"), {
   ssr: false,
@@ -70,9 +75,9 @@ const TabBuilderApp = () => {
     };
   }, []);
 
-  // Effect to render sheet music when tab is active and notes list changes
+  // Effect to render sheet music when notes list changes
   useEffect(() => {
-    if (activeTab === 'sheet' && abcjsRef.current && notesList.length > 0) {
+    if (abcjsRef.current && notesList.length > 0) {
       const abcText = generateABCText(notesList, bpm, activeTonality.tonic.code);
       abcjsRef.current.renderAbc("sheet-music-paper", abcText, {
         responsive: "resize",
@@ -202,11 +207,11 @@ const TabBuilderApp = () => {
       } else {
         setNotesList(prev => [...prev, {
           id: Math.random().toString(36).substr(2, 9),
-          note: "Rest",
+          note: "-",
           octave: 0,
           duration: finalDuration,
           start: start,
-          tab: "Rest",
+          tab: "-",
           isRest: true
         }]);
       }
@@ -276,9 +281,67 @@ const TabBuilderApp = () => {
   };
 
   const exportText = () => {
-    const text = notesList.map(n => n.isRest ? "Rest" : n.tab).join(" ");
+    const text = notesList.map(n => n.isRest ? "-" : n.tab).join(" ");
     navigator.clipboard.writeText(text);
     alert("Tablaturas copiadas al portapapeles: " + text);
+  };
+
+  // Add note from clicking a harmonica cell
+  const addNoteFromCell = (cell) => {
+    const cellDegree = activeTonality.tonality[cell.harmonyDegree];
+    if (!cellDegree) return;
+    const noteName = cellDegree.code;
+    const octave = cell.octave;
+    const beatDuration = 60 / bpm;
+    const tabSymbol = formatCellToTab(cell, notationStyle, harmonicaType);
+    
+    setNotesList(prev => [...prev, {
+      id: Math.random().toString(36).substr(2, 9),
+      note: noteName,
+      octave: octave,
+      duration: beatDuration,
+      start: prev.length > 0 ? prev[prev.length - 1].start + prev[prev.length - 1].duration : 0,
+      tab: tabSymbol,
+      isRest: false
+    }]);
+  };
+
+  // Add a rest
+  const addRest = () => {
+    const beatDuration = 60 / bpm;
+    setNotesList(prev => [...prev, {
+      id: Math.random().toString(36).substr(2, 9),
+      note: "-",
+      octave: 0,
+      duration: beatDuration,
+      start: prev.length > 0 ? prev[prev.length - 1].start + prev[prev.length - 1].duration : 0,
+      tab: "-",
+      isRest: true
+    }]);
+  };
+
+  // Build the harmonica cells for the clickable diagram
+  const getHarmonicaCells = () => {
+    let harmonica;
+    if (harmonicaType === 'chromatic16') {
+      harmonica = new ChromaticHarmonica(4);
+    } else if (harmonicaType === 'chromatic12') {
+      harmonica = new ChromaticHarmonica(3);
+    } else {
+      harmonica = new DiatonicHarmonica();
+    }
+    return harmonica.cells;
+  };
+
+  const getCellLabel = (cell) => {
+    if (cell.noteType === 4) return String(cell.hole);
+    return formatCellToTab(cell, notationStyle, harmonicaType);
+  };
+
+  const getCellNoteName = (cell) => {
+    if (cell.noteType === 4) return '';
+    const cellDegree = activeTonality.tonality[cell.harmonyDegree];
+    return cellDegree ? (cellDegree.displayName || cellDegree.code) : '';
   };
 
   const downloadJson = () => {
@@ -358,6 +421,10 @@ const TabBuilderApp = () => {
       case 'chromatic16': return 'Cromática 16';
       default: return 'Diatónica';
     }
+  };
+
+  const getPlainTabText = () => {
+    return notesList.map(n => n.isRest ? '-' : n.tab).join('  ');
   };
 
   return (
@@ -497,55 +564,114 @@ const TabBuilderApp = () => {
                 </div>
               </div>
 
-              {/* Navigation Tabs (Solapitas) */}
-              <Nav variant="tabs" activeKey={activeTab} onSelect={(k) => setActiveTab(k)} className="mb-3">
-                <Nav.Item>
-                  <Nav.Link eventKey="tabs" className="d-flex align-items-center gap-1">
-                    <VolumeUpIcon fontSize="small" /> Tablaturas de Armónica
-                  </Nav.Link>
-                </Nav.Item>
-                <Nav.Item>
-                  <Nav.Link eventKey="sheet" className="d-flex align-items-center gap-1">
-                    <MusicNoteIcon fontSize="small" /> Partitura Clásica
-                  </Nav.Link>
-                </Nav.Item>
-              </Nav>
-
-              {/* Scrollable Timeline or Classic Sheet */}
-              <div className="timeline-outer flex-grow-1 p-3 rounded-3 border bg-light position-relative">
+              {/* Tablaturas Card Grid */}
+              <div className="section-label mb-2">
+                <VolumeUpIcon fontSize="small" className="me-1" style={{ color: '#de6b62' }} />
+                <span className="fw-bold text-uppercase small">Tablaturas de Armónica</span>
+              </div>
+              <div className="timeline-outer p-3 rounded-3 border bg-light position-relative mb-3">
                 {notesList.length === 0 ? (
-                  <div className="d-flex h-100 flex-column align-items-center justify-content-center text-muted min-height-timeline">
-                    <VolumeUpIcon sx={{ fontSize: 48, opacity: 0.5 }} className="mb-2" />
-                    <span>Las notas grabadas aparecerán aquí.</span>
-                    <span className="small">Haz clic en "Grabar" y empieza a tocar tu armónica.</span>
+                  <div className="d-flex flex-column align-items-center justify-content-center text-muted" style={{ minHeight: '120px' }}>
+                    <VolumeUpIcon sx={{ fontSize: 36, opacity: 0.4 }} className="mb-1" />
+                    <span className="small">Grabá o agregá notas desde la armónica de abajo.</span>
                   </div>
                 ) : (
-                  activeTab === 'tabs' ? (
-                    <div className="timeline-inner d-flex flex-wrap gap-2 align-content-start overflow-auto">
-                      {notesList.map((item, idx) => (
-                        <div 
-                          key={item.id} 
-                          className={`note-block p-2 rounded-3 border text-center position-relative ${currentPlaybackIndex === idx ? 'playing' : ''} ${item.isRest ? 'rest-block' : 'pitch-block'}`}
-                          style={{ width: `${getNoteWidth(item.duration)}px` }}
+                  <div className="timeline-inner d-flex flex-wrap gap-2 align-content-start overflow-auto">
+                    {notesList.map((item, idx) => (
+                      <div 
+                        key={item.id} 
+                        className={`note-block p-2 rounded-3 border text-center position-relative ${currentPlaybackIndex === idx ? 'playing' : ''} ${item.isRest ? 'rest-block' : 'pitch-block'}`}
+                        style={{ width: `${getNoteWidth(item.duration)}px` }}
+                      >
+                        <div className="note-tab fw-bold text-dark">{item.isRest ? "-" : item.tab}</div>
+                        <div className="note-name small text-muted">{item.isRest ? "—" : `${item.note}${item.octave}`}</div>
+                        <div className="note-duration text-secondary" style={{ fontSize: '0.65rem' }}>{item.duration.toFixed(2)}s</div>
+                        
+                        <button 
+                          className="delete-block-btn position-absolute top-0 end-0 border-0 bg-transparent text-danger p-1"
+                          onClick={() => deleteNote(item.id)}
+                          title="Eliminar nota"
                         >
-                          <div className="note-tab fw-bold text-dark">{item.isRest ? "Rest" : item.tab}</div>
-                          <div className="note-name small text-muted">{item.isRest ? "—" : `${item.note}${item.octave}`}</div>
-                          <div className="note-duration text-secondary" style={{ fontSize: '0.65rem' }}>{item.duration.toFixed(2)}s</div>
-                          
-                          <button 
-                            className="delete-block-btn position-absolute top-0 end-0 border-0 bg-transparent text-danger p-1"
-                            onClick={() => deleteNote(item.id)}
-                            title="Eliminar nota"
-                          >
-                            ×
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div id="sheet-music-paper" className="w-100 bg-white p-3 rounded shadow-sm overflow-auto"></div>
-                  )
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 )}
+              </div>
+
+              {/* Plain Text Tab Display */}
+              {notesList.length > 0 && (
+                <div className="mb-3">
+                  <div className="section-label mb-2">
+                    <EditNoteIcon fontSize="small" className="me-1" style={{ color: '#de6b62' }} />
+                    <span className="fw-bold text-uppercase small">Texto Plano</span>
+                  </div>
+                  <div className="plain-tab-text p-3 rounded-3 border bg-white" style={{ fontFamily: 'monospace', fontSize: '1rem', wordBreak: 'break-word', lineHeight: '1.8', letterSpacing: '1px' }}>
+                    {getPlainTabText()}
+                  </div>
+                </div>
+              )}
+
+              {/* Sheet Music */}
+              <div className="section-label mb-2">
+                <MusicNoteIcon fontSize="small" className="me-1" style={{ color: '#de6b62' }} />
+                <span className="fw-bold text-uppercase small">Partitura Clásica</span>
+              </div>
+              <div className="p-3 rounded-3 border bg-white mb-3" style={{ minHeight: '120px' }}>
+                <div id="sheet-music-paper" className="w-100 overflow-auto"></div>
+                {notesList.length === 0 && (
+                  <div className="d-flex flex-column align-items-center justify-content-center text-muted" style={{ minHeight: '80px' }}>
+                    <MusicNoteIcon sx={{ fontSize: 36, opacity: 0.4 }} className="mb-1" />
+                    <span className="small">La partitura aparecerá aquí al agregar notas.</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Clickable Harmonica Diagram */}
+              <div className="section-label mb-2">
+                <MusicNoteIcon fontSize="small" className="me-1" style={{ color: '#de6b62' }} />
+                <span className="fw-bold text-uppercase small">Armónica — Click para agregar nota</span>
+                <Button variant="outline-secondary" size="sm" className="ms-2" onClick={addRest} style={{ fontSize: '0.7rem' }}>+ Silencio</Button>
+              </div>
+              <div className="harmonica-diagram-container p-3 rounded-3 border bg-white">
+                {isClient && (() => {
+                  const cells = getHarmonicaCells();
+                  const maxHole = Math.max(...cells.map(c => c.hole));
+                  const maxRow = Math.max(...cells.map(c => c.noteType));
+                  return (
+                    <div className="harmonica-diagram" style={{
+                      display: 'grid',
+                      gridTemplateColumns: `repeat(${maxHole}, 1fr)`,
+                      gridTemplateRows: `repeat(${maxRow}, auto)`,
+                      gap: '3px',
+                      maxWidth: '100%',
+                      overflowX: 'auto'
+                    }}>
+                      {cells.map((cell, idx) => {
+                        const isHoleLabel = cell.noteType === 4;
+                        const tabLabel = getCellLabel(cell);
+                        const noteLabel = getCellNoteName(cell);
+                        return (
+                          <div
+                            key={`hcell-${idx}`}
+                            className={`harmonica-cell ${isHoleLabel ? 'hole-label' : 'playable-cell'}`}
+                            style={{
+                              gridColumn: cell.hole,
+                              gridRow: cell.noteType,
+                              cursor: isHoleLabel ? 'default' : 'pointer',
+                            }}
+                            onClick={() => !isHoleLabel && addNoteFromCell(cell)}
+                            title={isHoleLabel ? `Celda ${cell.hole}` : `${noteLabel} — ${tabLabel}`}
+                          >
+                            <div className="hcell-tab">{tabLabel}</div>
+                            {!isHoleLabel && <div className="hcell-note">{noteLabel}</div>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           </Col>
@@ -567,12 +693,13 @@ const TabBuilderApp = () => {
         .detected-pitch-value {
           font-size: 2.2rem;
         }
-        .min-height-timeline {
-          min-height: 300px;
+        .section-label {
+          display: flex;
+          align-items: center;
         }
         .timeline-outer {
           background-image: linear-gradient(180deg, #fdfdfd 0%, #f7f9fa 100%);
-          max-height: 480px;
+          max-height: 350px;
           overflow-y: auto;
         }
         .timeline-inner {
@@ -586,6 +713,7 @@ const TabBuilderApp = () => {
           box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
           transition: all 0.2s ease;
           border-width: 2px !important;
+          min-width: 55px;
         }
         .note-block.pitch-block {
           border-color: #de6b62 !important;
@@ -603,7 +731,7 @@ const TabBuilderApp = () => {
           box-shadow: 0 0 12px rgba(222, 107, 98, 0.6);
         }
         .note-tab {
-          font-size: 1.3rem;
+          font-size: 1.1rem;
         }
         .delete-block-btn {
           font-size: 1.2rem;
@@ -615,7 +743,63 @@ const TabBuilderApp = () => {
           opacity: 1;
         }
         #sheet-music-paper {
-          min-height: 300px;
+          min-height: 80px;
+        }
+        .plain-tab-text {
+          color: #333;
+          border-color: #e0d5d4 !important;
+          background: #fffaf9 !important;
+        }
+        .harmonica-diagram-container {
+          border-color: #e0d5d4 !important;
+        }
+        .harmonica-cell {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          border: 1.5px solid #333;
+          border-radius: 6px;
+          padding: 4px 2px;
+          min-height: 40px;
+          transition: all 0.15s ease;
+          text-align: center;
+          overflow: hidden;
+        }
+        .harmonica-cell.hole-label {
+          background: #ffa8a8;
+          font-weight: bold;
+          font-size: 0.9rem;
+          border-radius: 8px;
+          min-height: 32px;
+        }
+        .harmonica-cell.playable-cell {
+          background: white;
+        }
+        .harmonica-cell.playable-cell:hover {
+          background: #ffebe9;
+          border-color: #de6b62;
+          box-shadow: 0 0 6px rgba(222, 107, 98, 0.4);
+          transform: scale(1.05);
+        }
+        .harmonica-cell.playable-cell:active {
+          transform: scale(0.95);
+          background: #de6b62;
+          color: white;
+        }
+        .harmonica-cell.playable-cell:active .hcell-note {
+          color: white !important;
+        }
+        .hcell-tab {
+          font-weight: bold;
+          font-size: 0.7rem;
+          line-height: 1.1;
+        }
+        .hcell-note {
+          font-size: 0.55rem;
+          color: #888;
+          line-height: 1;
+          margin-top: 1px;
         }
       `}</style>
     </div>
