@@ -27,9 +27,11 @@ const AdvancedEditor = () => {
   const [selectedEventId, setSelectedEventId] = useState(null);
   
   const [chordMode, setChordMode] = useState(false);
-  const [selectedDuration, setSelectedDuration] = useState(1); 
+  const [selectedBaseDuration, setSelectedBaseDuration] = useState(1); 
+  const [isDotted, setIsDotted] = useState(false);
   const [isTriplet, setIsTriplet] = useState(false);
   const [autoBeam, setAutoBeam] = useState(true);
+  const selectedDuration = isDotted ? selectedBaseDuration * 1.5 : selectedBaseDuration;
   
   // Refs
   const synthRef = useRef(null);
@@ -68,10 +70,15 @@ const AdvancedEditor = () => {
     
     const getAbcLength = (beats, triplet) => {
       if (triplet) return ""; 
-      if (beats === 1) return "";
-      if (beats === 2) return "2";
+      if (beats === 6) return "6";
       if (beats === 4) return "4";
+      if (beats === 3) return "3";
+      if (beats === 2) return "2";
+      if (beats === 1.5) return "3/2";
+      if (beats === 1) return "";
+      if (beats === 0.75) return "3/4";
       if (beats === 0.5) return "/2";
+      if (beats === 0.375) return "3/8";
       if (beats === 0.25) return "/4";
       return beats.toString();
     };
@@ -106,10 +113,12 @@ const AdvancedEditor = () => {
     charMapRef.current = [];
 
     let i = 0;
+    let currentBeat = 0;
     while (i < eventsList.length) {
       const ev = eventsList[i];
       if (ev.type === 'barline') {
         body += " | ";
+        currentBeat = 0;
         i++;
         continue;
       }
@@ -142,7 +151,11 @@ const AdvancedEditor = () => {
       
       if (isSelected) body += "!color:black!";
       
-      body += autoBeam ? "" : " ";
+      currentBeat += ev.durationBeats;
+      let crossedBeatBoundary = Math.floor(currentBeat) > Math.floor(currentBeat - ev.durationBeats);
+      let breakBeam = !autoBeam || crossedBeatBoundary;
+      body += breakBeam ? " " : "";
+      
       i++;
     }
     
@@ -167,8 +180,20 @@ const AdvancedEditor = () => {
               closestItem = item;
             }
           }
-          if (closestItem && minDiff < 5) {
+          if (closestItem) {
             setSelectedEventId(closestItem.eventId);
+            const ev = eventsList.find(e => e.id === closestItem.eventId);
+            if (ev) {
+              let base = ev.durationBeats;
+              let dotted = false;
+              if ([6, 3, 1.5, 0.75, 0.375].includes(ev.durationBeats)) {
+                dotted = true;
+                base = ev.durationBeats / 1.5;
+              }
+              setSelectedBaseDuration(base);
+              setIsDotted(dotted);
+              setIsTriplet(ev.isTriplet || false);
+            }
           } else {
             setSelectedEventId(null);
           }
@@ -178,10 +203,25 @@ const AdvancedEditor = () => {
   }, [eventsList, generateABCText]);
 
   // -- Toolbar Actions --
-  const handleDurationChange = (beats) => {
-    setSelectedDuration(beats);
+  const handleDurationChange = (val) => {
+    setSelectedBaseDuration(val);
     if (selectedEventId) {
-      setEventsList(prev => prev.map(ev => ev.id === selectedEventId ? { ...ev, durationBeats: beats } : ev));
+      setEventsList(prev => prev.map(ev => 
+        ev.id === selectedEventId ? { ...ev, durationBeats: isDotted ? val * 1.5 : val } : ev
+      ));
+    }
+  };
+
+  const toggleDotted = () => {
+    const newDotted = !isDotted;
+    setIsDotted(newDotted);
+    if (selectedEventId) {
+      setEventsList(prev => prev.map(ev => {
+        if (ev.id === selectedEventId) {
+           return { ...ev, durationBeats: newDotted ? selectedBaseDuration * 1.5 : selectedBaseDuration };
+        }
+        return ev;
+      }));
     }
   };
 
@@ -373,16 +413,19 @@ const AdvancedEditor = () => {
               <div className="d-flex flex-wrap gap-2 align-items-center justify-content-between px-2">
                 {/* Rhythm Palette */}
                 <div className="d-flex gap-1 align-items-center flex-wrap">
-                  <Button variant={selectedDuration === 4 ? "primary" : "outline-secondary"} size="sm" className="fw-bold px-2" onClick={() => handleDurationChange(4)}>𝅝</Button>
-                  <Button variant={selectedDuration === 2 ? "primary" : "outline-secondary"} size="sm" className="fw-bold px-2" onClick={() => handleDurationChange(2)}>𝅗𝅥</Button>
-                  <Button variant={selectedDuration === 1 ? "primary" : "outline-secondary"} size="sm" className="fw-bold px-2" onClick={() => handleDurationChange(1)}>♩</Button>
-                  <Button variant={selectedDuration === 0.5 ? "primary" : "outline-secondary"} size="sm" className="fw-bold px-2" onClick={() => handleDurationChange(0.5)}>♪</Button>
-                  <Button variant={selectedDuration === 0.25 ? "primary" : "outline-secondary"} size="sm" className="fw-bold px-2" onClick={() => handleDurationChange(0.25)}>♬</Button>
+                  <Button variant={selectedBaseDuration === 4 ? "primary" : "outline-secondary"} size="sm" className="fw-bold px-2" onClick={() => handleDurationChange(4)}>𝅝</Button>
+                  <Button variant={selectedBaseDuration === 2 ? "primary" : "outline-secondary"} size="sm" className="fw-bold px-2" onClick={() => handleDurationChange(2)}>𝅗𝅥</Button>
+                  <Button variant={selectedBaseDuration === 1 ? "primary" : "outline-secondary"} size="sm" className="fw-bold px-2" onClick={() => handleDurationChange(1)}>♩</Button>
+                  <Button variant={selectedBaseDuration === 0.5 ? "primary" : "outline-secondary"} size="sm" className="fw-bold px-2" onClick={() => handleDurationChange(0.5)}>♪</Button>
+                  <Button variant={selectedBaseDuration === 0.25 ? "primary" : "outline-secondary"} size="sm" className="fw-bold px-2" onClick={() => handleDurationChange(0.25)}>♬</Button>
                   
-                  <div className="vr mx-2"></div>
+                  <div className="vr mx-1"></div>
+                  <Button variant={isDotted ? "primary" : "outline-secondary"} size="sm" className="fw-bold px-2" onClick={toggleDotted} title="Puntillo (x1.5)">.</Button>
+                  
+                  <div className="vr mx-1"></div>
                   
                   <Button variant={isTriplet ? "warning" : "outline-secondary"} size="sm" className="fw-bold px-2" onClick={() => setIsTriplet(!isTriplet)}>3</Button>
-                  <Button variant="outline-secondary" size="sm" className="fw-bold px-2" onClick={toggleTie} disabled={!selectedEventId}>Lig.</Button>
+                  <Button variant="outline-secondary" size="sm" className="fw-bold px-2" onClick={toggleTie} disabled={!selectedEventId} title="Ligadura de Expresión (Tie)">Lig.</Button>
                   <Button variant="outline-secondary" size="sm" className="fw-bold px-2" onClick={addRest}>𝄽</Button>
                   <Button variant="outline-secondary" size="sm" className="fw-bold px-2" onClick={addBarline}>|</Button>
                 </div>
