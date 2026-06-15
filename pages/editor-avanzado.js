@@ -293,7 +293,15 @@ const AdvancedEditor = () => {
   };
 
   const getHarmonicaCells = () => {
-    let harmonica = harmonicaType === 'diatonic' ? new DiatonicHarmonica() : new ChromaticHarmonica();
+    let harmonica;
+    if (harmonicaType === 'chromatic16') {
+      harmonica = new ChromaticHarmonica(4);
+    } else if (harmonicaType === 'chromatic12') {
+      harmonica = new ChromaticHarmonica(3);
+    } else {
+      harmonica = new DiatonicHarmonica();
+    }
+    
     let cells = [];
     if (harmonica && harmonica.cells) {
       harmonica.cells.forEach(item => {
