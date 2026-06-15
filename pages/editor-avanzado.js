@@ -29,6 +29,7 @@ const AdvancedEditor = () => {
   const [chordMode, setChordMode] = useState(false);
   const [selectedDuration, setSelectedDuration] = useState(1); 
   const [isTriplet, setIsTriplet] = useState(false);
+  const [autoBeam, setAutoBeam] = useState(true);
   
   // Refs
   const synthRef = useRef(null);
@@ -100,7 +101,7 @@ const AdvancedEditor = () => {
       return abcAccidental + letterWithOctave;
     };
 
-    let header = `X:1\nT: Composición Avanzada\nM:${timeSignature}\nL:1/4\nK:${abcKey}\n`;
+    let header = `X:1\nT: Composición Avanzada\nM:${timeSignature}\nL:1/4\nK:${abcKey}\n%%autobeam ${autoBeam ? '1' : '0'}\n`;
     let body = "";
     charMapRef.current = [];
 
@@ -310,10 +311,10 @@ const AdvancedEditor = () => {
   };
 
   return (
-    <div className="tab-builder-container" style={{ background: '#f8f9fa', minHeight: '100vh' }}>
+    <div className="tab-builder-container d-flex flex-column" style={{ background: '#f8f9fa', minHeight: '100vh' }}>
       <Header />
       
-      <div className="tb-main-content px-3 px-lg-4 py-3">
+      <div className="tb-main-content flex-grow-1 px-3 px-lg-4 py-3">
         <div className="d-flex align-items-center justify-content-between mb-3">
           <h2 className="mb-0 fw-bold">Editor WYSIWYG</h2>
           <Button variant="outline-dark" size="sm" onClick={() => window.location.href = '/tab-builder'}>Volver</Button>
@@ -322,10 +323,17 @@ const AdvancedEditor = () => {
         {/* Global Config (Top Minimalist) */}
         <div className="glass-panel p-2 rounded-4 border mb-3 shadow-sm bg-white">
           <div className="d-flex flex-wrap gap-3 align-items-center justify-content-between px-3">
-            <div className="d-flex align-items-center gap-3">
+            <div className="d-flex align-items-center gap-2 flex-wrap">
               <span className="small text-muted fw-bold">Tonalidad:</span>
               <Form.Select size="sm" value={activeTonality.tonic.code} onChange={changeTonality} className="border-0 bg-light" style={{ width: '90px' }}>
                 {MusicTheory.HarmonyTonalities.map(t => <option key={t.value} value={t.code}>{t.name}</option>)}
+              </Form.Select>
+              
+              <span className="small text-muted fw-bold ms-2">Armónica:</span>
+              <Form.Select size="sm" value={harmonicaType} onChange={e => setHarmonicaType(e.target.value)} className="border-0 bg-light" style={{ width: '120px' }}>
+                <option value="diatonic">Diatónica</option>
+                <option value="chromatic12">Cromática 12</option>
+                <option value="chromatic16">Cromática 16</option>
               </Form.Select>
               
               <span className="small text-muted fw-bold ms-2">Compás:</span>
@@ -338,9 +346,13 @@ const AdvancedEditor = () => {
 
               <span className="small text-muted fw-bold ms-2">BPM:</span>
               <Form.Control type="number" size="sm" value={bpm} onChange={e => setBpm(Number(e.target.value))} className="border-0 bg-light" style={{ width: '60px' }} />
+              
+              <div className="vr mx-2"></div>
+              
+              <Form.Check type="switch" id="autobeam-mode" label="Solfeo Automático" checked={autoBeam} onChange={e => setAutoBeam(e.target.checked)} className="fw-bold mb-0 text-muted small" title="Agrupa corcheas y semicorcheas automáticamente según el compás" />
             </div>
 
-            <Button variant="success" size="sm" className="rounded-pill px-3 fw-bold" disabled={eventsList.length === 0}>
+            <Button variant="success" size="sm" className="rounded-pill px-3 fw-bold mt-2 mt-md-0" disabled={eventsList.length === 0}>
               <PlayArrowIcon fontSize="small"/> Reproducir (Piano)
             </Button>
           </div>
@@ -353,7 +365,7 @@ const AdvancedEditor = () => {
             <div className="glass-panel p-2 rounded-4 border mb-3 shadow-sm bg-white">
               <div className="d-flex flex-wrap gap-2 align-items-center justify-content-between px-2">
                 {/* Rhythm Palette */}
-                <div className="d-flex gap-1 align-items-center">
+                <div className="d-flex gap-1 align-items-center flex-wrap">
                   <Button variant={selectedDuration === 4 ? "primary" : "outline-secondary"} size="sm" className="fw-bold px-2" onClick={() => handleDurationChange(4)}>𝅝</Button>
                   <Button variant={selectedDuration === 2 ? "primary" : "outline-secondary"} size="sm" className="fw-bold px-2" onClick={() => handleDurationChange(2)}>𝅗𝅥</Button>
                   <Button variant={selectedDuration === 1 ? "primary" : "outline-secondary"} size="sm" className="fw-bold px-2" onClick={() => handleDurationChange(1)}>♩</Button>
@@ -369,7 +381,7 @@ const AdvancedEditor = () => {
                 </div>
 
                 {/* Editing Tools */}
-                <div className="d-flex gap-2 align-items-center">
+                <div className="d-flex gap-2 align-items-center flex-wrap">
                   <Form.Check type="switch" id="chord-mode" label="Acordes (Apilar)" checked={chordMode} onChange={e => setChordMode(e.target.checked)} className="fw-bold mb-0 text-primary small" />
                   <Button variant="danger" size="sm" className="d-flex align-items-center px-2" onClick={deleteSelected} disabled={!selectedEventId}>
                     <DeleteIcon fontSize="small"/> Borrar Sel.
@@ -417,13 +429,11 @@ const AdvancedEditor = () => {
                   const maxHole = Math.max(...cells.map(c => c.hole));
                   const maxRow = Math.max(...cells.map(c => c.noteType));
                   return (
-                    <div className="harmonica-diagram" style={{
+                    <div className="harmonica-diagram w-100" style={{
                       display: 'grid',
                       gridTemplateColumns: `repeat(${maxHole}, 1fr)`,
                       gridTemplateRows: `repeat(${maxRow}, auto)`,
-                      gap: '2px',
-                      transform: 'scale(0.85)',
-                      transformOrigin: 'center center'
+                      gap: '4px'
                     }}>
                       {cells.map((cell, idx) => {
                         const isHoleLabel = cell.noteType === 4;
@@ -437,16 +447,16 @@ const AdvancedEditor = () => {
                               background: isHoleLabel ? '#ffcdd2' : '#ffffff',
                               border: isHoleLabel ? 'none' : '1px solid #ccc',
                               cursor: isHoleLabel ? 'default' : 'pointer',
-                              minHeight: '30px'
+                              minHeight: '40px'
                             }}
                             onClick={() => { if (!isHoleLabel) handleHarmonicaClick(cell); }}
                           >
                             {isHoleLabel ? (
-                              <span className="fw-bold" style={{fontSize: '0.8rem'}}>{cell.hole}</span>
+                              <span className="fw-bold" style={{fontSize: '0.9rem'}}>{cell.hole}</span>
                             ) : (
                               <>
-                                <span className="hcell-tab fw-bold" style={{fontSize: '0.65rem'}}>{cell.tabSymbol}</span>
-                                <span className="hcell-note text-muted" style={{ fontSize: '0.55rem' }}>{cell.noteName}</span>
+                                <span className="hcell-tab fw-bold" style={{fontSize: '0.8rem'}}>{cell.tabSymbol}</span>
+                                <span className="hcell-note text-muted" style={{ fontSize: '0.65rem' }}>{cell.noteName}</span>
                               </>
                             )}
                           </div>
@@ -469,8 +479,7 @@ const AdvancedEditor = () => {
           align-items: center;
           justify-content: center;
           border-radius: 6px;
-          padding: 4px 2px;
-          min-height: 36px;
+          padding: 6px 2px;
           transition: all 0.15s ease;
           text-align: center;
         }
