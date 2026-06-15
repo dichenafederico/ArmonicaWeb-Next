@@ -141,8 +141,6 @@ const AdvancedEditor = () => {
       }
       
       if (isSelected) body += "!color:black!";
-
-      
       body += " ";
       i++;
     }
@@ -357,7 +355,7 @@ const AdvancedEditor = () => {
               
               <div className="vr mx-2"></div>
               
-              <Form.Check type="switch" id="autobeam-mode" label="Solfeo Automático" checked={autoBeam} onChange={e => setAutoBeam(e.target.checked)} className="fw-bold mb-0 text-muted small" title="Agrupa corcheas y semicorcheas automáticamente según el compás" />
+              <Form.Check type="switch" id="autobeam-mode" label="Agrupar figuras (Beaming)" checked={autoBeam} onChange={e => setAutoBeam(e.target.checked)} className="fw-bold mb-0 text-muted small" title="Agrupa corcheas y semicorcheas automáticamente según el compás" />
             </div>
 
             <Button variant="success" size="sm" className="rounded-pill px-3 fw-bold mt-2 mt-md-0" disabled={eventsList.length === 0}>
