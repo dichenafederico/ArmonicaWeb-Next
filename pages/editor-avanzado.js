@@ -122,6 +122,11 @@ const AdvancedEditor = () => {
       let prefix = ev.isTriplet ? "(3" : "";
       let lengthStr = getAbcLength(ev.durationBeats, ev.isTriplet);
       
+      let tabsAnnotation = "";
+      if (ev.type === 'note' && ev.pitches.length > 0) {
+        tabsAnnotation = '"_' + ev.pitches.map(p => p.tab).join(",") + '"';
+      }
+
       if (ev.type === 'rest') {
         body += `${prefix}z${lengthStr}`;
       } else {
@@ -131,17 +136,11 @@ const AdvancedEditor = () => {
         } else if (ev.pitches.length === 1) {
           noteStr = getNoteChar(ev.pitches[0]);
         }
-        body += `${prefix}${noteStr}${lengthStr}${ev.isTied ? "-" : ""}`;
+        body += `${prefix}${tabsAnnotation}${noteStr}${lengthStr}${ev.isTied ? "-" : ""}`;
       }
       
       if (isSelected) body += "!color:black!";
-      
-      // Inject tabs as lyrics
-      if (ev.type === 'note' && ev.pitches.length > 0) {
-        // Stack tabs if chord
-        const tabs = ev.pitches.map(p => p.tab).join(",");
-        body += `w:${tabs}`;
-      }
+
       
       body += " ";
       i++;
@@ -156,6 +155,7 @@ const AdvancedEditor = () => {
       abcjsRef.current.renderAbc("advanced-sheet-music", abcText, {
         responsive: "resize",
         add_classes: true,
+        scale: 0.8,
         clickListener: (abcElem, tuneNumber, classes, analysis, drag, mouseEvent) => {
           if (abcElem.startChar === undefined) return;
           let closestItem = null;
@@ -319,140 +319,144 @@ const AdvancedEditor = () => {
           <Button variant="outline-dark" size="sm" onClick={() => window.location.href = '/tab-builder'}>Volver</Button>
         </div>
 
-        {/* Toolbox / Graphical Palette */}
-        <div className="glass-panel p-3 rounded-4 border mb-3 shadow-sm bg-white">
-          <div className="d-flex flex-wrap gap-4 align-items-center justify-content-center">
-            
-            {/* Rhythm Palette */}
-            <div className="d-flex gap-2 p-2 bg-light rounded border align-items-center">
-              <span className="small text-muted fw-bold mx-2">Ritmo:</span>
-              <Button variant={selectedDuration === 4 ? "primary" : "outline-secondary"} className="fw-bold px-3 py-1" onClick={() => handleDurationChange(4)}>𝅝</Button>
-              <Button variant={selectedDuration === 2 ? "primary" : "outline-secondary"} className="fw-bold px-3 py-1" onClick={() => handleDurationChange(2)}>𝅗𝅥</Button>
-              <Button variant={selectedDuration === 1 ? "primary" : "outline-secondary"} className="fw-bold px-3 py-1" onClick={() => handleDurationChange(1)}>♩</Button>
-              <Button variant={selectedDuration === 0.5 ? "primary" : "outline-secondary"} className="fw-bold px-3 py-1" onClick={() => handleDurationChange(0.5)}>♪</Button>
-              <Button variant={selectedDuration === 0.25 ? "primary" : "outline-secondary"} className="fw-bold px-3 py-1" onClick={() => handleDurationChange(0.25)}>♬</Button>
-              
-              <div className="vr mx-1"></div>
-              
-              <Button variant={isTriplet ? "warning" : "outline-secondary"} className="fw-bold px-2 py-1" onClick={() => setIsTriplet(!isTriplet)}>3</Button>
-              <Button variant="outline-secondary" className="fw-bold px-2 py-1" onClick={toggleTie} disabled={!selectedEventId}>Lig.</Button>
-              <Button variant="outline-secondary" className="fw-bold px-2 py-1" onClick={addRest}>𝄽</Button>
-              <Button variant="outline-secondary" className="fw-bold px-2 py-1" onClick={addBarline}>|</Button>
-            </div>
-
-            {/* Editing Tools */}
-            <div className="d-flex gap-2 p-2 bg-light rounded border align-items-center">
-              <span className="small text-muted fw-bold mx-2">Acción:</span>
-              <Form.Check type="switch" id="chord-mode" label="Acordes (Apilar)" checked={chordMode} onChange={e => setChordMode(e.target.checked)} className="fw-bold mb-0 text-primary mx-2" />
-              <Button variant="danger" className="d-flex align-items-center px-2 py-1" onClick={deleteSelected} disabled={!selectedEventId}>
-                <DeleteIcon fontSize="small"/> Borrar Sel.
-              </Button>
-              <Button variant="outline-danger" size="sm" className="px-2 py-1" onClick={() => { setEventsList([]); setSelectedEventId(null); }}>
-                Limpiar Todo
-              </Button>
-            </div>
-
-          </div>
-        </div>
-
-        {/* Live Interactive Sheet Music */}
-        <div 
-          className="glass-panel p-3 rounded-4 border mb-3 bg-white shadow-sm position-relative" 
-          style={{ minHeight: '200px', cursor: 'pointer' }}
-          onClick={(e) => {
-            // Deselect if clicking empty space
-            if (e.target.id === 'advanced-sheet-music' || e.target.tagName === 'svg') {
-              setSelectedEventId(null);
-            }
-          }}
-        >
-          {selectedEventId && (
-            <div className="position-absolute top-0 end-0 m-2 p-1 bg-primary text-white rounded small fw-bold shadow-sm" style={{ pointerEvents: 'none', zIndex: 10 }}>
-              Modo Edición: Nota Seleccionada
-            </div>
-          )}
-          <div id="advanced-sheet-music" className="w-100 overflow-auto"></div>
-          {eventsList.length === 0 && (
-            <div className="text-center text-muted my-4 position-absolute top-50 start-50 translate-middle pointer-events-none">
-              <MusicNoteIcon sx={{ fontSize: 40, opacity: 0.3 }}/>
-              <p className="mt-2 small">Tocá la armónica abajo para empezar a dibujar.</p>
-            </div>
-          )}
-        </div>
-
-        {/* Global Config and Harmonica */}
-        <div className="d-flex gap-3 align-items-start">
-          <div className="glass-panel p-3 rounded-4 border shadow-sm bg-white" style={{ minWidth: '200px' }}>
-            <h6 className="fw-bold small text-muted mb-3 text-uppercase">Configuración</h6>
-            <div className="mb-2">
-              <span className="small text-muted">Tonalidad</span>
-              <Form.Select size="sm" value={activeTonality.tonic.code} onChange={changeTonality}>
+        {/* Global Config (Top Minimalist) */}
+        <div className="glass-panel p-2 rounded-4 border mb-3 shadow-sm bg-white">
+          <div className="d-flex flex-wrap gap-3 align-items-center justify-content-between px-3">
+            <div className="d-flex align-items-center gap-3">
+              <span className="small text-muted fw-bold">Tonalidad:</span>
+              <Form.Select size="sm" value={activeTonality.tonic.code} onChange={changeTonality} className="border-0 bg-light" style={{ width: '90px' }}>
                 {MusicTheory.HarmonyTonalities.map(t => <option key={t.value} value={t.code}>{t.name}</option>)}
               </Form.Select>
-            </div>
-            <div className="mb-2">
-              <span className="small text-muted">Compás</span>
-              <Form.Select size="sm" value={timeSignature} onChange={e => setTimeSignature(e.target.value)}>
+              
+              <span className="small text-muted fw-bold ms-2">Compás:</span>
+              <Form.Select size="sm" value={timeSignature} onChange={e => setTimeSignature(e.target.value)} className="border-0 bg-light" style={{ width: '70px' }}>
                 <option value="4/4">4/4</option>
                 <option value="3/4">3/4</option>
                 <option value="6/8">6/8</option>
                 <option value="2/4">2/4</option>
               </Form.Select>
+
+              <span className="small text-muted fw-bold ms-2">BPM:</span>
+              <Form.Control type="number" size="sm" value={bpm} onChange={e => setBpm(Number(e.target.value))} className="border-0 bg-light" style={{ width: '60px' }} />
             </div>
-            <div>
-              <span className="small text-muted">BPM</span>
-              <Form.Control type="number" size="sm" value={bpm} onChange={e => setBpm(Number(e.target.value))} />
-            </div>
-            <hr/>
-            <Button variant="success" size="sm" className="w-100 fw-bold d-flex justify-content-center align-items-center gap-1" disabled={eventsList.length === 0}>
+
+            <Button variant="success" size="sm" className="rounded-pill px-3 fw-bold" disabled={eventsList.length === 0}>
               <PlayArrowIcon fontSize="small"/> Reproducir (Piano)
             </Button>
           </div>
+        </div>
 
-          <div className="glass-panel p-3 rounded-4 border shadow-sm bg-white flex-grow-1">
-            <div className="mb-2 text-center text-muted small fw-bold">Click para insertar en la partitura</div>
-            {(() => {
-              const cells = getHarmonicaCells();
-              if(cells.length === 0) return null;
-              const maxHole = Math.max(...cells.map(c => c.hole));
-              const maxRow = Math.max(...cells.map(c => c.noteType));
-              return (
-                <div className="harmonica-diagram" style={{
-                  display: 'grid',
-                  gridTemplateColumns: `repeat(${maxHole}, 1fr)`,
-                  gridTemplateRows: `repeat(${maxRow}, auto)`,
-                  gap: '3px',
-                  overflowX: 'auto'
-                }}>
-                  {cells.map((cell, idx) => {
-                    const isHoleLabel = cell.noteType === 4;
-                    return (
-                      <div 
-                        key={idx} 
-                        className={`harmonica-cell ${isHoleLabel ? 'hole-label' : 'playable-cell'}`}
-                        style={{
-                          gridColumn: cell.hole,
-                          gridRow: cell.noteType,
-                          background: isHoleLabel ? '#ffcdd2' : '#ffffff',
-                          border: isHoleLabel ? 'none' : '1px solid #ccc',
-                          cursor: isHoleLabel ? 'default' : 'pointer'
-                        }}
-                        onClick={() => { if (!isHoleLabel) handleHarmonicaClick(cell); }}
-                      >
-                        {isHoleLabel ? (
-                          <span className="fw-bold">{cell.hole}</span>
-                        ) : (
-                          <>
-                            <span className="hcell-tab fw-bold">{cell.tabSymbol}</span>
-                            <span className="hcell-note text-muted" style={{ fontSize: '0.6rem' }}>{cell.noteName}</span>
-                          </>
-                        )}
-                      </div>
-                    );
-                  })}
+        <div className="row g-3">
+          {/* Left Column: Editor & Sheet Music */}
+          <div className="col-12 col-xl-8">
+            {/* Toolbox / Graphical Palette */}
+            <div className="glass-panel p-2 rounded-4 border mb-3 shadow-sm bg-white">
+              <div className="d-flex flex-wrap gap-2 align-items-center justify-content-between px-2">
+                {/* Rhythm Palette */}
+                <div className="d-flex gap-1 align-items-center">
+                  <Button variant={selectedDuration === 4 ? "primary" : "outline-secondary"} size="sm" className="fw-bold px-2" onClick={() => handleDurationChange(4)}>𝅝</Button>
+                  <Button variant={selectedDuration === 2 ? "primary" : "outline-secondary"} size="sm" className="fw-bold px-2" onClick={() => handleDurationChange(2)}>𝅗𝅥</Button>
+                  <Button variant={selectedDuration === 1 ? "primary" : "outline-secondary"} size="sm" className="fw-bold px-2" onClick={() => handleDurationChange(1)}>♩</Button>
+                  <Button variant={selectedDuration === 0.5 ? "primary" : "outline-secondary"} size="sm" className="fw-bold px-2" onClick={() => handleDurationChange(0.5)}>♪</Button>
+                  <Button variant={selectedDuration === 0.25 ? "primary" : "outline-secondary"} size="sm" className="fw-bold px-2" onClick={() => handleDurationChange(0.25)}>♬</Button>
+                  
+                  <div className="vr mx-2"></div>
+                  
+                  <Button variant={isTriplet ? "warning" : "outline-secondary"} size="sm" className="fw-bold px-2" onClick={() => setIsTriplet(!isTriplet)}>3</Button>
+                  <Button variant="outline-secondary" size="sm" className="fw-bold px-2" onClick={toggleTie} disabled={!selectedEventId}>Lig.</Button>
+                  <Button variant="outline-secondary" size="sm" className="fw-bold px-2" onClick={addRest}>𝄽</Button>
+                  <Button variant="outline-secondary" size="sm" className="fw-bold px-2" onClick={addBarline}>|</Button>
                 </div>
-              );
-            })()}
+
+                {/* Editing Tools */}
+                <div className="d-flex gap-2 align-items-center">
+                  <Form.Check type="switch" id="chord-mode" label="Acordes (Apilar)" checked={chordMode} onChange={e => setChordMode(e.target.checked)} className="fw-bold mb-0 text-primary small" />
+                  <Button variant="danger" size="sm" className="d-flex align-items-center px-2" onClick={deleteSelected} disabled={!selectedEventId}>
+                    <DeleteIcon fontSize="small"/> Borrar Sel.
+                  </Button>
+                  <Button variant="outline-danger" size="sm" className="px-2" onClick={() => { setEventsList([]); setSelectedEventId(null); }}>
+                    Limpiar Todo
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* Live Interactive Sheet Music */}
+            <div 
+              className="glass-panel p-3 rounded-4 border bg-white shadow-sm position-relative" 
+              style={{ minHeight: '200px', cursor: 'pointer' }}
+              onClick={(e) => {
+                if (e.target.id === 'advanced-sheet-music' || e.target.tagName === 'svg') {
+                  setSelectedEventId(null);
+                }
+              }}
+            >
+              {selectedEventId && (
+                <div className="position-absolute top-0 end-0 m-2 p-1 bg-primary text-white rounded small fw-bold shadow-sm" style={{ pointerEvents: 'none', zIndex: 10 }}>
+                  Nota Seleccionada
+                </div>
+              )}
+              <div id="advanced-sheet-music" className="w-100 overflow-auto"></div>
+              {eventsList.length === 0 && (
+                <div className="text-center text-muted my-4 position-absolute top-50 start-50 translate-middle pointer-events-none">
+                  <MusicNoteIcon sx={{ fontSize: 40, opacity: 0.3 }}/>
+                  <p className="mt-2 small">Tocá la armónica para empezar a dibujar.</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Right Column: Harmonica */}
+          <div className="col-12 col-xl-4">
+            <div className="glass-panel p-3 rounded-4 border shadow-sm bg-white h-100 d-flex flex-column">
+              <div className="mb-2 text-center text-muted small fw-bold">Armónica (Insertar nota)</div>
+              <div className="flex-grow-1 d-flex align-items-center justify-content-center">
+                {(() => {
+                  const cells = getHarmonicaCells();
+                  if(cells.length === 0) return null;
+                  const maxHole = Math.max(...cells.map(c => c.hole));
+                  const maxRow = Math.max(...cells.map(c => c.noteType));
+                  return (
+                    <div className="harmonica-diagram" style={{
+                      display: 'grid',
+                      gridTemplateColumns: `repeat(${maxHole}, 1fr)`,
+                      gridTemplateRows: `repeat(${maxRow}, auto)`,
+                      gap: '2px',
+                      transform: 'scale(0.85)',
+                      transformOrigin: 'center center'
+                    }}>
+                      {cells.map((cell, idx) => {
+                        const isHoleLabel = cell.noteType === 4;
+                        return (
+                          <div 
+                            key={idx} 
+                            className={`harmonica-cell ${isHoleLabel ? 'hole-label' : 'playable-cell'}`}
+                            style={{
+                              gridColumn: cell.hole,
+                              gridRow: cell.noteType,
+                              background: isHoleLabel ? '#ffcdd2' : '#ffffff',
+                              border: isHoleLabel ? 'none' : '1px solid #ccc',
+                              cursor: isHoleLabel ? 'default' : 'pointer',
+                              minHeight: '30px'
+                            }}
+                            onClick={() => { if (!isHoleLabel) handleHarmonicaClick(cell); }}
+                          >
+                            {isHoleLabel ? (
+                              <span className="fw-bold" style={{fontSize: '0.8rem'}}>{cell.hole}</span>
+                            ) : (
+                              <>
+                                <span className="hcell-tab fw-bold" style={{fontSize: '0.65rem'}}>{cell.tabSymbol}</span>
+                                <span className="hcell-note text-muted" style={{ fontSize: '0.55rem' }}>{cell.noteName}</span>
+                              </>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
           </div>
         </div>
 
