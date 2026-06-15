@@ -141,7 +141,8 @@ const AdvancedEditor = () => {
       }
       
       if (isSelected) body += "!color:black!";
-      body += " ";
+      
+      body += autoBeam ? "" : " ";
       i++;
     }
     
