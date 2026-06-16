@@ -95,7 +95,8 @@ const TabBuilderApp = () => {
           const abcText = generateABCText(notesList, bpm, activeTonality.tonic.code);
           abcjsRef.current.renderAbc("sheet-music-paper", abcText, {
             responsive: "resize",
-            add_classes: true
+            add_classes: true,
+            scale: 0.8
           });
         }
       }, 50);
@@ -643,16 +644,14 @@ const TabBuilderApp = () => {
               {/* Toolbar Separator */}
               <div className="border-start border-2 mx-2" style={{ height: '24px' }}></div>
 
-              {/* Editor controls */}
-              <div className="d-flex align-items-center gap-1 bg-white rounded-pill px-2 border" style={{ height: '32px' }}>
-                <span className="small text-muted fw-bold ps-1">Figura:</span>
-                <Form.Select size="sm" className="border-0 bg-transparent py-0 fw-semibold text-primary" style={{ width: '100px', boxShadow: 'none', fontSize: '0.85rem' }} value={selectedDuration} onChange={(e) => setSelectedDuration(Number(e.target.value))}>
-                  <option value={4}>Redonda</option>
-                  <option value={2}>Blanca</option>
-                  <option value={1}>Negra</option>
-                  <option value={0.5}>Corchea</option>
-                  <option value={0.25}>Semicorch.</option>
-                </Form.Select>
+              {/* Editor controls / Rhythm Palette */}
+              <div className="d-flex align-items-center gap-1 bg-white rounded-pill px-2 py-1 border" style={{ height: '32px' }}>
+                <span className="small text-muted fw-bold ps-1 me-1">Figura:</span>
+                <Button variant={selectedDuration === 4 ? "primary" : "outline-secondary"} size="sm" className="fw-bold px-2 py-0 border-0" style={{ height: '24px', lineHeight: '1' }} onClick={() => setSelectedDuration(4)} title="Redonda">𝅝</Button>
+                <Button variant={selectedDuration === 2 ? "primary" : "outline-secondary"} size="sm" className="fw-bold px-2 py-0 border-0" style={{ height: '24px', lineHeight: '1' }} onClick={() => setSelectedDuration(2)} title="Blanca">𝅗𝅥</Button>
+                <Button variant={selectedDuration === 1 ? "primary" : "outline-secondary"} size="sm" className="fw-bold px-2 py-0 border-0" style={{ height: '24px', lineHeight: '1' }} onClick={() => setSelectedDuration(1)} title="Negra">♩</Button>
+                <Button variant={selectedDuration === 0.5 ? "primary" : "outline-secondary"} size="sm" className="fw-bold px-2 py-0 border-0" style={{ height: '24px', lineHeight: '1' }} onClick={() => setSelectedDuration(0.5)} title="Corchea">♪</Button>
+                <Button variant={selectedDuration === 0.25 ? "primary" : "outline-secondary"} size="sm" className="fw-bold px-2 py-0 border-0" style={{ height: '24px', lineHeight: '1' }} onClick={() => setSelectedDuration(0.25)} title="Semicorchea">♬</Button>
               </div>
 
               <div className="d-flex align-items-center gap-1 bg-white rounded-pill px-2 border" style={{ height: '32px' }}>
@@ -758,123 +757,127 @@ const TabBuilderApp = () => {
           </Nav.Item>
         </Nav>
 
-        {/* Content area */}
-        <div className="tb-content-area glass-panel p-3 rounded-bottom-4 border border-top-0 mb-3">
-          
-          {/* Tabs View */}
-          <div className={activeTab === 'tabs' ? "d-block" : "d-none"}>
-            {/* Card grid */}
-            <div className="timeline-outer p-3 rounded-3 border bg-light position-relative mb-3">
-              {notesList.length === 0 ? (
-                <div className="d-flex flex-column align-items-center justify-content-center text-muted" style={{ minHeight: '100px' }}>
-                  <VolumeUpIcon sx={{ fontSize: 36, opacity: 0.4 }} className="mb-1" />
-                  <span className="small">Grabá o agregá notas desde la armónica de abajo.</span>
-                </div>
-              ) : (
-                <div className="timeline-inner d-flex flex-wrap gap-2 align-content-start overflow-auto">
-                  {notesList.map((item, idx) => (
-                    <div 
-                      key={item.id} 
-                      className={`note-block p-2 rounded-3 border text-center position-relative ${currentPlaybackIndex === idx ? 'playing' : ''} ${item.isRest ? 'rest-block' : 'pitch-block'}`}
-                      style={{ width: `${getNoteWidth(item.duration)}px` }}
-                    >
-                      <div className="note-tab fw-bold text-dark">{item.isRest ? "-" : item.tab}</div>
-                      <div className="note-name small text-muted">{item.isRest ? "—" : `${item.note}${item.octave}`}</div>
-                      
-                      <select 
-                        className="border-0 bg-transparent text-secondary p-0 mt-1 w-100" 
-                        style={{ fontSize: '0.65rem', outline: 'none', cursor: 'pointer', appearance: 'none', textAlign: 'center', textAlignLast: 'center' }}
-                        value={item.duration / (60 / bpm)}
-                        onChange={(e) => updateNoteDuration(item.id, Number(e.target.value))}
-                        title="Cambiar duración"
-                      >
-                        <option value={4}>Redonda</option>
-                        <option value={2}>Blanca</option>
-                        <option value={1}>Negra</option>
-                        <option value={0.5}>Corchea</option>
-                        <option value={0.25}>Semi.</option>
-                        {![4, 2, 1, 0.5, 0.25].includes(item.duration / (60 / bpm)) && (
-                          <option value={item.duration / (60 / bpm)}>{(item.duration / (60 / bpm)).toFixed(2)}x</option>
-                        )}
-                      </select>
-                      <button 
-                        className="delete-block-btn position-absolute top-0 end-0 border-0 bg-transparent text-danger p-1"
-                        onClick={() => deleteNote(item.id)}
-                        title="Eliminar nota"
-                      >×</button>
+        <div className="row g-3">
+          <div className="col-12 col-xl-8">
+            {/* Content area */}
+            <div className="tb-content-area glass-panel p-3 rounded-bottom-4 border border-top-0 mb-3" style={{ borderTopLeftRadius: '0 !important', borderTopRightRadius: '0 !important' }}>
+              
+              {/* Tabs View */}
+              <div className={activeTab === 'tabs' ? "d-block" : "d-none"}>
+                {/* Card grid */}
+                <div className="timeline-outer p-3 rounded-3 border bg-light position-relative mb-3">
+                  {notesList.length === 0 ? (
+                    <div className="d-flex flex-column align-items-center justify-content-center text-muted" style={{ minHeight: '100px' }}>
+                      <VolumeUpIcon sx={{ fontSize: 36, opacity: 0.4 }} className="mb-1" />
+                      <span className="small">Grabá o agregá notas desde la armónica de la derecha.</span>
                     </div>
-                  ))}
+                  ) : (
+                    <div className="timeline-inner d-flex flex-wrap gap-2 align-content-start overflow-auto">
+                      {notesList.map((item, idx) => (
+                        <div 
+                          key={item.id} 
+                          className={`note-block p-2 rounded-3 border text-center position-relative ${currentPlaybackIndex === idx ? 'playing' : ''} ${item.isRest ? 'rest-block' : 'pitch-block'}`}
+                          style={{ width: `${getNoteWidth(item.duration)}px` }}
+                        >
+                          <div className="note-tab fw-bold text-dark">{item.isRest ? "-" : item.tab}</div>
+                          <div className="note-name small text-muted">{item.isRest ? "—" : `${item.note}${item.octave}`}</div>
+                          
+                          <select 
+                            className="border-0 bg-transparent text-secondary p-0 mt-1 w-100" 
+                            style={{ fontSize: '0.65rem', outline: 'none', cursor: 'pointer', appearance: 'none', textAlign: 'center', textAlignLast: 'center' }}
+                            value={item.duration / (60 / bpm)}
+                            onChange={(e) => updateNoteDuration(item.id, Number(e.target.value))}
+                            title="Cambiar duración"
+                          >
+                            <option value={4}>Redonda</option>
+                            <option value={2}>Blanca</option>
+                            <option value={1}>Negra</option>
+                            <option value={0.5}>Corchea</option>
+                            <option value={0.25}>Semi.</option>
+                            {![4, 2, 1, 0.5, 0.25].includes(item.duration / (60 / bpm)) && (
+                              <option value={item.duration / (60 / bpm)}>{(item.duration / (60 / bpm)).toFixed(2)}x</option>
+                            )}
+                          </select>
+                          <button 
+                            className="delete-block-btn position-absolute top-0 end-0 border-0 bg-transparent text-danger p-1"
+                            onClick={() => deleteNote(item.id)}
+                            title="Eliminar nota"
+                          >×</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-            {/* Plain text */}
-            {notesList.length > 0 && (
-              <div className="plain-tab-text p-2 rounded-3 border bg-white mb-3" style={{ fontFamily: 'monospace', fontSize: '0.9rem', wordBreak: 'break-word', lineHeight: '1.8', letterSpacing: '1px' }}>
-                {getPlainTabText()}
+                {/* Plain text */}
+                {notesList.length > 0 && (
+                  <div className="plain-tab-text p-2 rounded-3 border bg-white mb-3" style={{ fontFamily: 'monospace', fontSize: '0.9rem', wordBreak: 'break-word', lineHeight: '1.8', letterSpacing: '1px' }}>
+                    {getPlainTabText()}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
 
-          {/* Sheet Music View */}
-          <div className={`p-3 rounded-3 border bg-white ${activeTab === 'sheet' ? "d-block" : "d-none"}`} style={{ minHeight: '120px' }}>
-            <div id="sheet-music-paper" className="w-100 overflow-auto"></div>
-            {notesList.length === 0 && (
-              <div className="d-flex flex-column align-items-center justify-content-center text-muted" style={{ minHeight: '80px' }}>
-                <MusicNoteIcon sx={{ fontSize: 36, opacity: 0.4 }} className="mb-1" />
-                <span className="small">La partitura aparecerá aquí al agregar notas.</span>
+              {/* Sheet Music View */}
+              <div className={`p-3 rounded-3 border bg-white ${activeTab === 'sheet' ? "d-block" : "d-none"}`} style={{ minHeight: '120px' }}>
+                <div id="sheet-music-paper" className="w-100 overflow-auto"></div>
+                {notesList.length === 0 && (
+                  <div className="d-flex flex-column align-items-center justify-content-center text-muted" style={{ minHeight: '80px' }}>
+                    <MusicNoteIcon sx={{ fontSize: 36, opacity: 0.4 }} className="mb-1" />
+                    <span className="small">La partitura aparecerá aquí al agregar notas.</span>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-
-        </div>
-
-        {/* Clickable Harmonica Diagram — always visible */}
-        <div className="glass-panel p-3 rounded-4 border mb-3">
-          <div className="d-flex align-items-center justify-content-between mb-2">
-            <div className="section-label">
-              <MusicNoteIcon fontSize="small" className="me-1" style={{ color: '#de6b62' }} />
-              <span className="fw-bold text-uppercase small">Armónica — Click para agregar nota</span>
             </div>
-            <Button variant="outline-secondary" size="sm" onClick={addRest} style={{ fontSize: '0.7rem' }}>+ Silencio</Button>
           </div>
-          <div className="harmonica-diagram-container">
-            {isClient && (() => {
-              const cells = getHarmonicaCells();
-              const maxHole = Math.max(...cells.map(c => c.hole));
-              const maxRow = Math.max(...cells.map(c => c.noteType));
-              return (
-                <div className="harmonica-diagram" style={{
-                  display: 'grid',
-                  gridTemplateColumns: `repeat(${maxHole}, 1fr)`,
-                  gridTemplateRows: `repeat(${maxRow}, auto)`,
-                  gap: '3px',
-                  maxWidth: '100%',
-                  overflowX: 'auto'
-                }}>
-                  {cells.map((cell, idx) => {
-                    const isHoleLabel = cell.noteType === 4;
-                    const tabLabel = getCellLabel(cell);
-                    const noteLabel = getCellNoteName(cell);
-                    return (
-                      <div
-                        key={`hcell-${idx}`}
-                        className={`harmonica-cell ${isHoleLabel ? 'hole-label' : 'playable-cell'}`}
-                        style={{
-                          gridColumn: cell.hole,
-                          gridRow: cell.noteType,
-                          cursor: isHoleLabel ? 'default' : 'pointer',
-                        }}
-                        onClick={() => !isHoleLabel && addNoteFromCell(cell)}
-                        title={isHoleLabel ? `Celda ${cell.hole}` : `${noteLabel} — ${tabLabel}`}
-                      >
-                        <div className="hcell-tab">{tabLabel}</div>
-                        {!isHoleLabel && <div className="hcell-note">{noteLabel}</div>}
-                      </div>
-                    );
-                  })}
+          
+          <div className="col-12 col-xl-4">
+            {/* Clickable Harmonica Diagram — always visible */}
+            <div className="glass-panel p-3 rounded-4 border mb-3 h-100 d-flex flex-column">
+              <div className="d-flex align-items-center justify-content-between mb-2">
+                <div className="section-label">
+                  <MusicNoteIcon fontSize="small" className="me-1" style={{ color: '#de6b62' }} />
+                  <span className="fw-bold text-uppercase small">Armónica (Insertar)</span>
                 </div>
-              );
-            })()}
+                <Button variant="outline-secondary" size="sm" onClick={addRest} style={{ fontSize: '0.7rem' }}>+ Silencio</Button>
+              </div>
+              <div className="harmonica-diagram-container flex-grow-1 d-flex align-items-center justify-content-center">
+                {isClient && (() => {
+                  const cells = getHarmonicaCells();
+                  const maxHole = Math.max(...cells.map(c => c.hole));
+                  const maxRow = Math.max(...cells.map(c => c.noteType));
+                  return (
+                    <div className="harmonica-diagram w-100" style={{
+                      display: 'grid',
+                      gridTemplateColumns: `repeat(${maxHole}, 1fr)`,
+                      gridTemplateRows: `repeat(${maxRow}, auto)`,
+                      gap: '4px'
+                    }}>
+                      {cells.map((cell, idx) => {
+                        const isHoleLabel = cell.noteType === 4;
+                        const tabLabel = getCellLabel(cell);
+                        const noteLabel = getCellNoteName(cell);
+                        return (
+                          <div
+                            key={`hcell-${idx}`}
+                            className={`harmonica-cell ${isHoleLabel ? 'hole-label' : 'playable-cell'}`}
+                            style={{
+                              gridColumn: cell.hole,
+                              gridRow: cell.noteType,
+                              cursor: isHoleLabel ? 'default' : 'pointer',
+                              minHeight: '40px'
+                            }}
+                            onClick={() => !isHoleLabel && addNoteFromCell(cell)}
+                            title={isHoleLabel ? `Celda ${cell.hole}` : `${noteLabel} — ${tabLabel}`}
+                          >
+                            <div className="hcell-tab">{tabLabel}</div>
+                            {!isHoleLabel && <div className="hcell-note">{noteLabel}</div>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
           </div>
         </div>
       </div>
