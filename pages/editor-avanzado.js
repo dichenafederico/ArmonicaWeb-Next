@@ -509,7 +509,7 @@ const AdvancedEditor = () => {
         </div>
 
         {/* Global Config (Top Minimalist) */}
-        <div className="glass-panel p-2 rounded-4 border mb-3 shadow-sm bg-white">
+        <div className="bg-white p-2 rounded-4 border mb-3 shadow-sm position-relative" style={{ zIndex: 10 }}>
           <div className="d-flex flex-wrap gap-3 align-items-center justify-content-between px-3">
             <div className="d-flex align-items-center gap-2 flex-wrap">
               <span className="small text-muted fw-bold">Tonalidad:</span>
