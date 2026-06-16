@@ -549,7 +549,7 @@ const AdvancedEditor = () => {
                 <Dropdown.Toggle variant="outline-secondary" size="sm" disabled={eventsList.length === 0} className="rounded-pill px-3 fw-bold shadow-sm">
                   Exportar
                 </Dropdown.Toggle>
-                <Dropdown.Menu className="shadow-sm">
+                <Dropdown.Menu className="shadow-sm" style={{ zIndex: 1050 }}>
                   <Dropdown.Item onClick={downloadJson}>JSON (Backup)</Dropdown.Item>
                   <Dropdown.Item onClick={exportABC}>Partitura (.abc)</Dropdown.Item>
                   <Dropdown.Item onClick={exportMusicXML}>MusicXML (.musicxml)</Dropdown.Item>

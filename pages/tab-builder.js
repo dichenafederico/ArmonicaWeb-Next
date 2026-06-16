@@ -663,17 +663,7 @@ const TabBuilderApp = () => {
               <Button variant="outline-primary" size="sm" onClick={exportText} disabled={notesList.length === 0} className="d-flex align-items-center gap-1 rounded-pill px-3 py-1">
                 <DownloadIcon fontSize="small" /> Copiar
               </Button>
-              <div className="dropdown">
-                <Button variant="outline-secondary" size="sm" disabled={notesList.length === 0} className="d-flex align-items-center gap-1 rounded-pill px-3 py-1 dropdown-toggle" data-bs-toggle="dropdown">
-                  <UploadIcon fontSize="small" /> Exportar
-                </Button>
-                <ul className="dropdown-menu shadow-sm">
-                  <li><button className="dropdown-item" onClick={downloadJson}>JSON (Backup)</button></li>
-                  <li><button className="dropdown-item" onClick={exportABC}>Partitura (.abc)</button></li>
-                  <li><button className="dropdown-item" onClick={exportMIDI}>Audio (.mid)</button></li>
-                </ul>
-              </div>
-
+              {/* Export dropdown removed by user request */}
               {/* Toolbar Separator */}
               <div className="border-start border-2 mx-2" style={{ height: '24px' }}></div>
 
