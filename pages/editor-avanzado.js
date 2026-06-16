@@ -4,7 +4,7 @@ import Footer from "../components/Contenedores/footer";
 import * as MusicTheory from "../TeoriaMusical/musicTheory";
 import Tonality from "../TeoriaMusical/tonality";
 import { findClosestCell, formatCellToTab } from "../utils/tabMapper";
-import { Button, Form } from "react-bootstrap";
+import { Button, Form, Dropdown } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -278,6 +278,105 @@ const AdvancedEditor = () => {
     downloadAnchor.remove();
   };
 
+  const exportPDF = () => {
+    window.print();
+  };
+
+  const exportMIDI = () => {
+    if (!abcjsRef.current || eventsList.length === 0) return;
+    const abcText = generateABCText();
+    try {
+      const midiBlob = new Blob([abcjsRef.current.synth.getMidiFile(abcText)], {type: 'audio/midi'});
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", URL.createObjectURL(midiBlob));
+      downloadAnchor.setAttribute("download", `armonica_${activeTonality.tonic.name}.mid`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    } catch(e) {
+      console.error("MIDI Export failed", e);
+    }
+  };
+
+  const exportMusicXML = () => {
+    if (eventsList.length === 0) return;
+    let xml = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n<!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 3.1 Partwise//EN" "http://www.musicxml.org/dtds/partwise.dtd">\n<score-partwise version="3.1">\n  <part-list>\n    <score-part id="P1">\n      <part-name>Armónica</part-name>\n    </score-part>\n  </part-list>\n  <part id="P1">\n    <measure number="1">\n      <attributes>\n        <divisions>24</divisions>\n        <key><fifths>0</fifths></key>\n        <time><beats>4</beats><beat-type>4</beat-type></time>\n        <clef><sign>G</sign><line>2</line></clef>\n      </attributes>\n`;
+    eventsList.forEach((ev) => {
+      const durationDivs = Math.round(ev.durationBeats * 24);
+      if (ev.type === 'rest') {
+        xml += `      <note>\n        <rest/>\n        <duration>${durationDivs}</duration>\n      </note>\n`;
+      } else {
+        ev.pitches.forEach((pitch, i) => {
+          let step = pitch.note.charAt(0);
+          let alter = 0;
+          if (pitch.note.length > 1) alter = pitch.note.charAt(1) === '#' ? 1 : -1;
+          xml += `      <note>\n`;
+          if (i > 0) xml += `        <chord/>\n`;
+          xml += `        <pitch>\n          <step>${step}</step>\n`;
+          if (alter !== 0) xml += `          <alter>${alter}</alter>\n`;
+          xml += `          <octave>${pitch.octave}</octave>\n        </pitch>\n        <duration>${durationDivs}</duration>\n      </note>\n`;
+        });
+      }
+    });
+    xml += `    </measure>\n  </part>\n</score-partwise>`;
+    const blob = new Blob([xml], { type: 'application/vnd.recordare.musicxml+xml' });
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute("href", URL.createObjectURL(blob));
+    downloadAnchor.setAttribute("download", `armonica_${activeTonality.tonic.name}.musicxml`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+  };
+
+  const fileInputRef = useRef(null);
+
+  const importMusicXML = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(evt.target.result, "text/xml");
+        const measures = xmlDoc.getElementsByTagName("measure");
+        let newEvents = [];
+        for (let m = 0; m < measures.length; m++) {
+          let divisions = 24;
+          const divNode = measures[m].getElementsByTagName("divisions")[0];
+          if (divNode) divisions = parseInt(divNode.textContent);
+          const notes = measures[m].getElementsByTagName("note");
+          for (let i = 0; i < notes.length; i++) {
+            const noteNode = notes[i];
+            const isRest = noteNode.getElementsByTagName("rest").length > 0;
+            const isChord = noteNode.getElementsByTagName("chord").length > 0;
+            const durNode = noteNode.getElementsByTagName("duration")[0];
+            const durationBeats = durNode ? parseInt(durNode.textContent) / divisions : 1;
+            if (isRest) {
+              newEvents.push({ id: Math.random().toString(36).substr(2, 9), type: 'rest', durationBeats, isTriplet: false, isTied: false });
+            } else {
+              const stepNode = noteNode.getElementsByTagName("step")[0];
+              const octNode = noteNode.getElementsByTagName("octave")[0];
+              const alterNode = noteNode.getElementsByTagName("alter")[0];
+              if (stepNode && octNode) {
+                let noteName = stepNode.textContent;
+                if (alterNode) noteName += parseInt(alterNode.textContent) > 0 ? "#" : "b";
+                const pitch = { note: noteName, octave: parseInt(octNode.textContent), tab: "?" };
+                if (isChord && newEvents.length > 0) newEvents[newEvents.length - 1].pitches.push(pitch);
+                else newEvents.push({ id: Math.random().toString(36).substr(2, 9), type: 'note', pitches: [pitch], durationBeats, isTriplet: false, isTied: false });
+              }
+            }
+          }
+        }
+        setEventsList(newEvents);
+        e.target.value = "";
+      } catch (err) {
+        console.error("Error importando MusicXML", err);
+        alert("El archivo MusicXML no pudo ser procesado.");
+      }
+    };
+    reader.readAsText(file);
+  };
+
   // -- Event Handlers --
   const handleHarmonicaClick = (cell) => {
     const cellDegree = activeTonality.tonality[cell.harmonyDegree];
@@ -441,17 +540,25 @@ const AdvancedEditor = () => {
               <Form.Check type="switch" id="autobeam-mode" label="Agrupar figuras (Beaming)" checked={autoBeam} onChange={e => setAutoBeam(e.target.checked)} className="fw-bold mb-0 text-muted small" title="Agrupa corcheas y semicorcheas automáticamente según el compás" />
             </div>
 
-            <div className="d-flex align-items-center gap-2 mt-2 mt-md-0">
-              <div className="dropdown">
-                <Button variant="outline-secondary" size="sm" disabled={eventsList.length === 0} className="d-flex align-items-center gap-1 rounded-pill px-3 fw-bold dropdown-toggle" data-bs-toggle="dropdown">
+            <div className="d-flex align-items-center gap-2 mt-2 mt-md-0 d-print-none">
+              <input type="file" accept=".xml,.musicxml" ref={fileInputRef} onChange={importMusicXML} style={{ display: 'none' }} />
+              <Button variant="outline-primary" size="sm" className="rounded-pill px-3 fw-bold shadow-sm" onClick={() => fileInputRef.current?.click()}>
+                Importar MusicXML
+              </Button>
+              <Dropdown>
+                <Dropdown.Toggle variant="outline-secondary" size="sm" disabled={eventsList.length === 0} className="rounded-pill px-3 fw-bold shadow-sm">
                   Exportar
-                </Button>
-                <ul className="dropdown-menu shadow-sm dropdown-menu-end">
-                  <li><button className="dropdown-item" onClick={downloadJson}>JSON (Backup)</button></li>
-                  <li><button className="dropdown-item" onClick={exportABC}>Partitura (.abc)</button></li>
-                </ul>
-              </div>
-              <Button variant="success" size="sm" className="rounded-pill px-3 fw-bold" disabled={eventsList.length === 0}>
+                </Dropdown.Toggle>
+                <Dropdown.Menu className="shadow-sm">
+                  <Dropdown.Item onClick={downloadJson}>JSON (Backup)</Dropdown.Item>
+                  <Dropdown.Item onClick={exportABC}>Partitura (.abc)</Dropdown.Item>
+                  <Dropdown.Item onClick={exportMusicXML}>MusicXML (.musicxml)</Dropdown.Item>
+                  <Dropdown.Item onClick={exportMIDI}>Audio MIDI (.mid)</Dropdown.Item>
+                  <Dropdown.Divider />
+                  <Dropdown.Item onClick={exportPDF}>Exportar a PDF</Dropdown.Item>
+                </Dropdown.Menu>
+              </Dropdown>
+              <Button variant="success" size="sm" className="rounded-pill px-3 fw-bold shadow-sm" disabled={eventsList.length === 0}>
                 <PlayArrowIcon fontSize="small"/> Reproducir (Piano)
               </Button>
             </div>
@@ -595,6 +702,37 @@ const AdvancedEditor = () => {
           transform: scale(0.95);
           background: #de6b62 !important;
           color: white;
+        }
+        .glass-panel {
+          background: rgba(255, 255, 255, 0.85);
+          backdrop-filter: blur(10px);
+          box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        }
+        .section-label {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+        }
+        @media print {
+          body * {
+            visibility: hidden;
+          }
+          #sheet-music-paper, #sheet-music-paper * {
+            visibility: visible;
+          }
+          #sheet-music-paper {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100% !important;
+            min-height: 100vh;
+            border: none !important;
+            box-shadow: none !important;
+            background: white !important;
+          }
+          .d-print-none {
+            display: none !important;
+          }
         }
       `}</style>
     </div>
