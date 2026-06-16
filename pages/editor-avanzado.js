@@ -54,6 +54,22 @@ const AdvancedEditor = () => {
     };
   }, []);
 
+  useEffect(() => {
+    const importData = localStorage.getItem('armonica_adv_import');
+    if (importData) {
+      try {
+        const data = JSON.parse(importData);
+        if (data.eventsList) setEventsList(data.eventsList);
+        if (data.bpm) setBpm(data.bpm);
+        if (data.harmonicaType) setHarmonicaType(data.harmonicaType);
+        if (data.notationStyle) setNotationStyle(data.notationStyle);
+      } catch(e) {
+        console.error("Error importing data", e);
+      }
+      localStorage.removeItem('armonica_adv_import');
+    }
+  }, []);
+
   // -- ABC Generation --
   const generateABCText = useCallback(() => {
     const abcKey = activeTonality.tonic.code.replace("b", "b").replace("#", "#");

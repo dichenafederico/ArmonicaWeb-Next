@@ -588,11 +588,43 @@ const TabBuilderApp = () => {
     return notesList.map(n => n.isRest ? '-' : n.tab).join('  ');
   };
 
+  const goToAdvancedEditor = () => {
+    const advancedEvents = notesList.map((n) => {
+      if (n.isRest) {
+        return {
+          id: Math.random().toString(36).substr(2, 9),
+          type: 'rest',
+          durationBeats: n.duration / (60 / bpm),
+          isTriplet: false,
+          isTied: false
+        };
+      } else {
+        return {
+          id: Math.random().toString(36).substr(2, 9),
+          type: 'note',
+          pitches: [{ note: n.note, octave: n.octave, tab: n.tab }],
+          durationBeats: n.duration / (60 / bpm),
+          isTriplet: false,
+          isTied: false
+        };
+      }
+    });
+    
+    const exportData = {
+      eventsList: advancedEvents,
+      bpm: bpm,
+      harmonicaType: harmonicaType,
+      notationStyle: notationStyle
+    };
+    localStorage.setItem('armonica_adv_import', JSON.stringify(exportData));
+    window.location.href = '/editor-avanzado';
+  };
+
   return (
-    <div className="tab-builder-container">
+    <div className="tab-builder-container d-flex flex-column" style={{ minHeight: '100vh' }}>
       <Header />
       
-      <div className="tb-main-content px-3 px-lg-4">
+      <div className="tb-main-content px-3 px-lg-4 flex-grow-1 w-100" style={{ maxWidth: '1600px', margin: '0 auto' }}>
         <div className="text-center mb-3">
           <h1 className="display-6 text-dark fw-bold mb-1">Creador de Partituras y Tablaturas</h1>
           <p className="text-muted mb-0" style={{ fontSize: '0.9rem' }}>Tocá tu armónica y la aplicación escribirá la tablatura automáticamente.</p>
@@ -644,15 +676,9 @@ const TabBuilderApp = () => {
               {/* Toolbar Separator */}
               <div className="border-start border-2 mx-2" style={{ height: '24px' }}></div>
 
-              {/* Editor controls / Rhythm Palette */}
-              <div className="d-flex align-items-center gap-1 bg-white rounded-pill px-2 py-1 border" style={{ height: '32px' }}>
-                <span className="small text-muted fw-bold ps-1 me-1">Figura:</span>
-                <Button variant={selectedDuration === 4 ? "primary" : "outline-secondary"} size="sm" className="fw-bold px-2 py-0 border-0" style={{ height: '24px', lineHeight: '1' }} onClick={() => setSelectedDuration(4)} title="Redonda">𝅝</Button>
-                <Button variant={selectedDuration === 2 ? "primary" : "outline-secondary"} size="sm" className="fw-bold px-2 py-0 border-0" style={{ height: '24px', lineHeight: '1' }} onClick={() => setSelectedDuration(2)} title="Blanca">𝅗𝅥</Button>
-                <Button variant={selectedDuration === 1 ? "primary" : "outline-secondary"} size="sm" className="fw-bold px-2 py-0 border-0" style={{ height: '24px', lineHeight: '1' }} onClick={() => setSelectedDuration(1)} title="Negra">♩</Button>
-                <Button variant={selectedDuration === 0.5 ? "primary" : "outline-secondary"} size="sm" className="fw-bold px-2 py-0 border-0" style={{ height: '24px', lineHeight: '1' }} onClick={() => setSelectedDuration(0.5)} title="Corchea">♪</Button>
-                <Button variant={selectedDuration === 0.25 ? "primary" : "outline-secondary"} size="sm" className="fw-bold px-2 py-0 border-0" style={{ height: '24px', lineHeight: '1' }} onClick={() => setSelectedDuration(0.25)} title="Semicorchea">♬</Button>
-              </div>
+              <Button variant="primary" size="sm" onClick={goToAdvancedEditor} disabled={notesList.length === 0} className="d-flex align-items-center gap-1 rounded-pill px-3 py-1 fw-bold shadow-sm">
+                <EditNoteIcon fontSize="small" /> Edición Avanzada
+              </Button>
 
               <div className="d-flex align-items-center gap-1 bg-white rounded-pill px-2 border" style={{ height: '32px' }}>
                 <span className="small text-muted fw-bold ps-1 me-1">Transponer:</span>
@@ -817,8 +843,8 @@ const TabBuilderApp = () => {
               </div>
 
               {/* Sheet Music View */}
-              <div className={`p-3 rounded-3 border bg-white ${activeTab === 'sheet' ? "d-block" : "d-none"}`} style={{ minHeight: '120px' }}>
-                <div id="sheet-music-paper" className="w-100 overflow-auto"></div>
+              <div className={`p-3 rounded-3 border bg-white ${activeTab === 'sheet' ? "d-block" : "d-none"}`} style={{ minHeight: '120px', maxWidth: '100%', overflowX: 'auto' }}>
+                <div id="sheet-music-paper" style={{ minWidth: 'min-content' }}></div>
                 {notesList.length === 0 && (
                   <div className="d-flex flex-column align-items-center justify-content-center text-muted" style={{ minHeight: '80px' }}>
                     <MusicNoteIcon sx={{ fontSize: 36, opacity: 0.4 }} className="mb-1" />
@@ -886,8 +912,6 @@ const TabBuilderApp = () => {
 
       <style jsx>{`
         .tb-main-content {
-          max-width: 1400px;
-          margin: 0 auto;
           padding-top: 1rem;
         }
         .glass-panel {
