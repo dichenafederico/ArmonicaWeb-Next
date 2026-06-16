@@ -8,6 +8,7 @@ import { findClosestCell, formatCellToTab, getHarmonicaMidiMap } from "../utils/
 import { Container, Row, Col, Button, Form, Nav, Collapse } from "react-bootstrap";
 import { Provider } from 'react-redux';
 import store from '../Store/store';
+import Router from 'next/router';
 import "bootstrap/dist/css/bootstrap.min.css";
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import PauseIcon from '@mui/icons-material/Pause';
@@ -617,7 +618,7 @@ const TabBuilderApp = () => {
       notationStyle: notationStyle
     };
     localStorage.setItem('armonica_adv_import', JSON.stringify(exportData));
-    window.location.href = '/editor-avanzado';
+    Router.push('/editor-avanzado');
   };
 
   return (

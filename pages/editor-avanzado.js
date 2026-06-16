@@ -12,6 +12,7 @@ import MusicNoteIcon from '@mui/icons-material/MusicNote';
 import DiatonicHarmonica from '../TeoriaMusical/diatonicHarmonica';
 import ChromaticHarmonica from '../TeoriaMusical/chromaticHarmonica';
 import * as Tone from 'tone';
+import Router from 'next/router';
 
 const noteStringsForMidi = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
 
@@ -252,6 +253,31 @@ const AdvancedEditor = () => {
     setEventsList(prev => prev.map(ev => ev.id === selectedEventId ? { ...ev, isTied: !ev.isTied } : ev));
   };
 
+  const exportABC = () => {
+    if (eventsList.length === 0) return;
+    const abcText = generateABCText();
+    const blob = new Blob([abcText], { type: 'text/plain;charset=utf-8' });
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute("href", URL.createObjectURL(blob));
+    downloadAnchor.setAttribute("download", `armonica_avanzado_${activeTonality.tonic.name}.abc`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+  };
+
+  const downloadJson = () => {
+    if (eventsList.length === 0) return;
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({
+      eventsList, bpm, harmonicaType, notationStyle
+    }, null, 2));
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", `armonica_avanzado_${harmonicaType}_${activeTonality.tonic.name}.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+  };
+
   // -- Event Handlers --
   const handleHarmonicaClick = (cell) => {
     const cellDegree = activeTonality.tonality[cell.harmonyDegree];
@@ -374,13 +400,13 @@ const AdvancedEditor = () => {
   };
 
   return (
-    <div className="tab-builder-container d-flex flex-column" style={{ background: '#f8f9fa', minHeight: '100vh' }}>
+    <div className="d-flex flex-column" style={{ minHeight: '100vh', backgroundColor: '#f9f9f9' }}>
       <Header />
       
-      <div className="tb-main-content flex-grow-1 px-3 px-lg-4 py-3">
+      <div className="tb-main-content flex-grow-1 px-3 px-lg-4 py-3 w-100" style={{ maxWidth: '1600px', margin: '0 auto' }}>
         <div className="d-flex align-items-center justify-content-between mb-3">
           <h2 className="mb-0 fw-bold">Editor WYSIWYG</h2>
-          <Button variant="outline-dark" size="sm" onClick={() => window.location.href = '/tab-builder'}>Volver</Button>
+          <Button variant="outline-dark" size="sm" onClick={() => Router.push('/tab-builder')}>Volver</Button>
         </div>
 
         {/* Global Config (Top Minimalist) */}
@@ -415,9 +441,20 @@ const AdvancedEditor = () => {
               <Form.Check type="switch" id="autobeam-mode" label="Agrupar figuras (Beaming)" checked={autoBeam} onChange={e => setAutoBeam(e.target.checked)} className="fw-bold mb-0 text-muted small" title="Agrupa corcheas y semicorcheas automáticamente según el compás" />
             </div>
 
-            <Button variant="success" size="sm" className="rounded-pill px-3 fw-bold mt-2 mt-md-0" disabled={eventsList.length === 0}>
-              <PlayArrowIcon fontSize="small"/> Reproducir (Piano)
-            </Button>
+            <div className="d-flex align-items-center gap-2 mt-2 mt-md-0">
+              <div className="dropdown">
+                <Button variant="outline-secondary" size="sm" disabled={eventsList.length === 0} className="d-flex align-items-center gap-1 rounded-pill px-3 fw-bold dropdown-toggle" data-bs-toggle="dropdown">
+                  Exportar
+                </Button>
+                <ul className="dropdown-menu shadow-sm dropdown-menu-end">
+                  <li><button className="dropdown-item" onClick={downloadJson}>JSON (Backup)</button></li>
+                  <li><button className="dropdown-item" onClick={exportABC}>Partitura (.abc)</button></li>
+                </ul>
+              </div>
+              <Button variant="success" size="sm" className="rounded-pill px-3 fw-bold" disabled={eventsList.length === 0}>
+                <PlayArrowIcon fontSize="small"/> Reproducir (Piano)
+              </Button>
+            </div>
           </div>
         </div>
 
