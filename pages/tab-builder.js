@@ -47,6 +47,7 @@ const TabBuilderApp = () => {
   const [recordedAudioNote, setRecordedAudioNote] = useState({ note: null, detuning: 0, octave: null });
   const [isClient, setIsClient] = useState(false);
   const [metronomeSound, setMetronomeSound] = useState(false);
+  const [isPlayingStandaloneMetronome, setIsPlayingStandaloneMetronome] = useState(false);
   const [activeTab, setActiveTab] = useState('tabs'); // 'tabs' or 'sheet'
   const [showConfig, setShowConfig] = useState(false);
   
@@ -65,6 +66,7 @@ const TabBuilderApp = () => {
   const abcjsRef = useRef(null);
   const isRecordingRef = useRef(false);
   const tunerRef = useRef(null);
+  const standaloneMetronomeRef = useRef(null);
 
   useEffect(() => {
     setIsClient(true);
@@ -143,6 +145,35 @@ const TabBuilderApp = () => {
     osc.volume.value = -12;
     osc.start(time).stop(time + 0.05);
   }, [metronomeSound]);
+
+  useEffect(() => {
+    if (isPlayingStandaloneMetronome) {
+      if (standaloneMetronomeRef.current) clearInterval(standaloneMetronomeRef.current);
+      const intervalMs = (60 / bpm) * 1000;
+      standaloneMetronomeRef.current = setInterval(() => {
+        const osc = new Tone.Oscillator("C6", "sine").toDestination();
+        osc.volume.value = -12;
+        osc.start(Tone.now()).stop(Tone.now() + 0.05);
+      }, intervalMs);
+      return () => {
+        if (standaloneMetronomeRef.current) clearInterval(standaloneMetronomeRef.current);
+      };
+    } else {
+      if (standaloneMetronomeRef.current) clearInterval(standaloneMetronomeRef.current);
+    }
+  }, [bpm, isPlayingStandaloneMetronome]);
+
+  const toggleStandaloneMetronome = () => {
+    if (!isPlayingStandaloneMetronome && Tone.context.state !== "running") {
+      Tone.start();
+    }
+    if (!isPlayingStandaloneMetronome) {
+      const osc = new Tone.Oscillator("C6", "sine").toDestination();
+      osc.volume.value = -12;
+      osc.start(Tone.now()).stop(Tone.now() + 0.05);
+    }
+    setIsPlayingStandaloneMetronome(prev => !prev);
+  };
 
   // Start recording
   const startRecording = () => {
@@ -742,8 +773,20 @@ const TabBuilderApp = () => {
                 </Col>
                 <Col sm={2}>
                   <Form.Group>
-                    <Form.Label className="fw-semibold small mb-1 d-flex justify-content-between">
-                      <span>BPM</span>
+                    <Form.Label className="fw-semibold small mb-1 d-flex justify-content-between align-items-center">
+                      <div className="d-flex align-items-center gap-1">
+                        <span>BPM</span>
+                        <Button 
+                          variant="light" 
+                          size="sm" 
+                          className="p-0 border rounded-circle d-flex align-items-center justify-content-center" 
+                          style={{ width: '20px', height: '20px', backgroundColor: isPlayingStandaloneMetronome ? '#de6b62' : '#f8f9fa', color: isPlayingStandaloneMetronome ? 'white' : '#6c757d' }}
+                          onClick={toggleStandaloneMetronome}
+                          title="Escuchar Tempo"
+                        >
+                          {isPlayingStandaloneMetronome ? <StopIcon style={{ fontSize: '12px' }} /> : <PlayArrowIcon style={{ fontSize: '12px' }} />}
+                        </Button>
+                      </div>
                       <span className="text-primary fw-bold">{bpm}</span>
                     </Form.Label>
                     <Form.Range min={50} max={200} value={bpm} onChange={(e) => setBpm(Number(e.target.value))} />
